@@ -204,6 +204,11 @@ body {
 .period-btn, .device-btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); background: transparent; cursor: pointer; transition: all .2s; font-family: inherit; }
 .period-btn.active, .device-btn.active { background: var(--primary); color: #fff; }
 .period-btn:hover:not(.active), .device-btn:hover:not(.active) { background: var(--surface-2); color: var(--text-secondary); }
+.trend-view-toggle { display:flex; gap:0; background:var(--surface); padding:4px; border-radius:var(--radius-sm); border:1px solid var(--border); }
+.view-toggle-btn { padding:7px 14px; border:none; border-radius:6px; font-size:12px; font-weight:700; color:var(--text-muted); background:transparent; cursor:pointer; transition:all .2s; font-family:inherit; display:flex; align-items:center; gap:5px; }
+.view-toggle-btn.active { background:#7C3AED; color:#fff; }
+.view-toggle-btn:hover:not(.active) { background:var(--surface-2); color:var(--text-secondary); }
+.trend-volume-notice { display:flex; align-items:center; gap:8px; background:#F5F3FF; border:1px solid #DDD6FE; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#5B21B6; }
 .trend-chart-wrap { background: var(--surface); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); height: 380px; position: relative; }
 .trend-chart-wrap canvas { width: 100% !important; height: 100% !important; }
 .trend-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; padding: 16px 20px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
@@ -369,11 +374,25 @@ body {
             <button class="period-btn" data-period="6">6개월</button>
             <button class="period-btn" data-period="12">1년</button>
           </div>
-          <div class="trend-device-btns">
-            <button class="device-btn active" data-device="all">전체</button>
-            <button class="device-btn" data-device="pc">PC</button>
-            <button class="device-btn" data-device="mo">모바일</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="trend-device-btns">
+              <button class="device-btn active" data-device="all">전체</button>
+              <button class="device-btn" data-device="pc">PC</button>
+              <button class="device-btn" data-device="mo">모바일</button>
+            </div>
+            <div class="trend-view-toggle" id="trendViewToggle">
+              <button class="view-toggle-btn active" data-view="ratio" title="트렌드 비율(0~100) 표시">
+                <i class="fa-solid fa-percent"></i> 비율
+              </button>
+              <button class="view-toggle-btn" data-view="volume" title="월간 검색량 역산 추정치 표시">
+                <i class="fa-solid fa-magnifying-glass"></i> 검색량
+              </button>
+            </div>
           </div>
+        </div>
+        <div class="trend-volume-notice" id="trendVolumeNotice" style="display:none">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>검색량은 <strong>월간 검색량 × 트렌드 비율</strong>로 역산한 <strong>추정치</strong>입니다. 실제값과 차이가 있을 수 있습니다.</span>
         </div>
         <div class="trend-chart-wrap"><canvas id="trendChart"></canvas></div>
         <div class="trend-legend" id="trendLegend"></div>
@@ -639,10 +658,34 @@ Chart.register(ChartDataLabels);
 let trendChartInstance = null;
 let genderChartInstances = {};
 let ageChartInstances = {};
+let trendViewMode = 'ratio'; // 'ratio' | 'volume'
 
 const GENDER_COLORS = { male: '#3B82F6', female: '#EC4899' };
 const AGE_COLORS = ['#818CF8','#A78BFA','#4F46E5','#6366F1','#3B82F6','#06B6D4'];
 const BASE_FONT = { family: "'Pretendard','Apple SD Gothic Neo',sans-serif", size: 12 };
+
+// 검색량 약식 표기: 1500 → 1.5k, 12000 → 1.2만, 150000 → 15만
+function formatVolumeShort(v) {
+  if (v === null || v === undefined || isNaN(v)) return '-';
+  if (v >= 100000) return (v / 10000).toFixed(0) + '만';
+  if (v >= 10000)  return (v / 10000).toFixed(1).replace(/\.0$/, '') + '만';
+  if (v >= 1000)   return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(Math.round(v));
+}
+
+// 트렌드 비율 → 실제 검색량 역산
+// baseSearch: 해당 키워드의 월간 총 검색량(최근 1개월 기준, SearchAd API 값)
+// 역산 공식: 가장 최근 달 트렌드 비율 = baseSearch 기준점
+// 이전 달 추정 = baseSearch × (해당달 ratio / 최근달 ratio)
+function estimateVolumeFromTrend(ratioArr, baseSearch) {
+  if (!ratioArr || !ratioArr.length) return [];
+  if (!baseSearch) return ratioArr.map(t => ({ ...t, volume: 0 }));
+  const lastRatio = ratioArr[ratioArr.length - 1].ratio || 1;
+  return ratioArr.map(t => ({
+    ...t,
+    volume: Math.round((t.ratio / lastRatio) * baseSearch)
+  }));
+}
 
 function renderGenderDonut(canvasId, data) {
   const ctx = document.getElementById(canvasId);
@@ -697,23 +740,46 @@ function renderTrendChart(allData, period, device) {
   if (trendChartInstance) trendChartInstance.destroy();
   const now = new Date();
   const cutoff = new Date(now.getFullYear(), now.getMonth() - period + 1, 1);
+
+  const isVolume = (trendViewMode === 'volume');
+
+  // 각 키워드별 필터링된 트렌드 + 검색량 역산
   const filteredData = allData.map(d => {
-    const trend = d.trendData[device];
+    const trend = d.trendData[device] || [];
     const filtered = trend.filter(t => {
       const [y, m] = t.period.split('-').map(Number);
       return new Date(y, m - 1, 1) >= cutoff;
     });
-    return { ...d, filteredTrend: filtered };
+    const withVolume = estimateVolumeFromTrend(filtered, d.totalSearch);
+    return { ...d, filteredTrend: filtered, filteredVolume: withVolume };
   });
+
   const labels = filteredData[0]?.filteredTrend.map(t => formatPeriodLabel(t.period, period <= 3)) || [];
+
   const datasets = filteredData.map(d => ({
-    label: d.keyword, data: d.filteredTrend.map(t => t.ratio),
-    borderColor: d.color, backgroundColor: d.color + '15', borderWidth: 2.5,
-    pointRadius: 4, pointHoverRadius: 7, pointBackgroundColor: d.color,
-    pointBorderColor: '#fff', pointBorderWidth: 2, fill: filteredData.length === 1, tension: 0.35
+    label: d.keyword,
+    data: isVolume
+      ? d.filteredVolume.map(t => t.volume)
+      : d.filteredTrend.map(t => t.ratio),
+    borderColor: d.color,
+    backgroundColor: d.color + '15',
+    borderWidth: 2.5,
+    pointRadius: 4, pointHoverRadius: 7,
+    pointBackgroundColor: d.color,
+    pointBorderColor: '#fff', pointBorderWidth: 2,
+    fill: filteredData.length === 1, tension: 0.35
   }));
+
+  // Y축 최대값 계산
+  const allValues = datasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v));
+  const maxVal = allValues.length ? Math.max(...allValues) : (isVolume ? 1000 : 100);
+  const yMax = isVolume
+    ? Math.ceil(maxVal * 1.2 / 1000) * 1000 || 1000
+    : 100;
+
   trendChartInstance = new Chart(ctx, {
-    type: 'line', data: { labels, datasets },
+    type: 'line',
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
@@ -723,13 +789,35 @@ function renderTrendChart(allData, period, device) {
           backgroundColor: 'rgba(15,23,42,.92)',
           titleFont: { ...BASE_FONT, size: 13, weight: '600' },
           bodyFont: { ...BASE_FONT, size: 13 }, padding: 12, cornerRadius: 10,
-          callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${ctx.parsed.y}` }
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed.y;
+              if (isVolume) {
+                return `  ${ctx.dataset.label}: 약 ${formatNumber(v)}회`;
+              }
+              return `  ${ctx.dataset.label}: ${v}`;
+            }
+          }
         },
         datalabels: { display: false }
       },
       scales: {
-        x: { grid: { color: '#F1F5F9', drawBorder: false }, border: { display: false }, ticks: { font: BASE_FONT, color: '#94A3B8' } },
-        y: { min: 0, max: 100, grid: { color: '#F1F5F9', drawBorder: false }, border: { display: false }, ticks: { font: BASE_FONT, color: '#94A3B8', stepSize: 20, callback: (v) => v } }
+        x: {
+          grid: { color: '#F1F5F9', drawBorder: false },
+          border: { display: false },
+          ticks: { font: BASE_FONT, color: '#94A3B8' }
+        },
+        y: {
+          min: 0,
+          max: yMax,
+          grid: { color: '#F1F5F9', drawBorder: false },
+          border: { display: false },
+          ticks: {
+            font: BASE_FONT, color: '#94A3B8',
+            maxTicksLimit: 6,
+            callback: (v) => isVolume ? formatVolumeShort(v) : v
+          }
+        }
       }
     }
   });
@@ -1206,6 +1294,21 @@ function renderTrend() {
   renderTrendChart(analysisData, trendPeriod, trendDevice);
   renderTrendLegend(analysisData);
 }
+
+// 트렌드 뷰 토글 (비율 ↔ 검색량)
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('trendViewToggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn) return;
+    const view = btn.dataset.view;
+    if (view === trendViewMode) return;
+    trendViewMode = view;
+    document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    const notice = document.getElementById('trendVolumeNotice');
+    if (notice) notice.style.display = (view === 'volume') ? 'flex' : 'none';
+    if (analysisData.length > 0) renderTrendChart(analysisData, trendPeriod, trendDevice);
+  });
+});
 
 document.querySelectorAll('.period-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
