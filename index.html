@@ -321,12 +321,12 @@ body {
     <section class="search-panel">
       <div class="search-panel-header">
         <h2 class="section-title">키워드 입력</h2>
-        <span class="keyword-counter"><span id="kwCount">0</span> / 10</span>
+        <span class="keyword-counter"><span id="kwCount">0</span> / 5</span>
       </div>
       <div class="keyword-input-area" id="keywordInputArea">
         <div class="keyword-tags" id="keywordTags"></div>
         <input type="text" class="keyword-input" id="keywordInput"
-          placeholder="키워드 입력 후 Enter 또는 쉼표로 추가 (최대 10개)" autocomplete="off" />
+          placeholder="키워드 입력 후 Enter 또는 쉼표로 추가 (최대 5개)" autocomplete="off" />
       </div>
       <div class="search-actions">
         <button class="btn-clear" id="btnClear"><i class="fa-solid fa-xmark"></i> 초기화</button>
@@ -421,7 +421,7 @@ body {
     <div class="empty-state" id="emptyState">
       <div class="empty-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
       <h3>키워드를 입력하고 분석을 시작하세요</h3>
-      <p>최대 10개의 키워드를 입력하여<br/>광고주 관점의 상세 데이터를 확인할 수 있습니다.</p>
+      <p>최대 5개의 키워드를 입력하여<br/>광고주 관점의 상세 데이터를 확인할 수 있습니다.</p>
     </div>
   </main>
 
@@ -571,12 +571,16 @@ function formatPeriodLabel(period, short = false) {
    api.js - API 클라이언트 (v20260313b - fetchDemographicData 포함)
 ===================================================== */
 const ApiClient = (() => {
+  const DEFAULT_WORKER_URL = 'https://keywordlens-proxy.mcdowell1232.workers.dev';
   function getWorkerUrl() {
-    return (localStorage.getItem('kl_workerUrl') || '').replace(/\/$/, '');
+    if (!localStorage.getItem('kl_workerUrl')) {
+      localStorage.setItem('kl_workerUrl', DEFAULT_WORKER_URL);
+    }
+    return (localStorage.getItem('kl_workerUrl') || DEFAULT_WORKER_URL).replace(/\/$/, '');
   }
   async function apiFetch(endpoint, options = {}, timeoutMs = 25000) {
     const workerUrl = getWorkerUrl();
-    if (!workerUrl) throw new ApiError('Worker URL이 설정되지 않았습니다.\n우측 상단 API 설정에서 Cloudflare Worker URL을 입력해주세요.', 'NO_WORKER_URL');
+    if (!workerUrl) throw new ApiError('Worker URL이 설정되지 않았습니다.', 'NO_WORKER_URL');
     let response;
     try {
       const controller = new AbortController();
@@ -851,7 +855,7 @@ function destroyAllCharts() {
 /* =====================================================
    app.js - 메인 앱 로직
 ===================================================== */
-function isApiMode() { return !!localStorage.getItem('kl_workerUrl'); }
+function isApiMode() { return true; } // 항상 LIVE 모드
 
 let keywords = [];
 let analysisData = [];
@@ -879,7 +883,7 @@ const modalSave      = document.getElementById('modalSave');
 function addKeyword(kw) {
   kw = kw.trim().replace(/[,，]/g, '');
   if (!kw) return;
-  if (keywords.length >= 10) { showToast('키워드는 최대 10개까지 입력할 수 있습니다.', 'error'); return; }
+  if (keywords.length >= 5) { showToast('키워드는 최대 5개까지 입력할 수 있습니다.', 'error'); return; }
   if (keywords.includes(kw)) { showToast(`'${kw}'은(는) 이미 추가된 키워드입니다.`, 'error'); return; }
   keywords.push(kw);
   renderTags();
@@ -1375,7 +1379,7 @@ function saveApiSettings() {
 }
 function loadApiSettings() {
   const el = document.getElementById('workerUrl');
-  if (el) el.value = localStorage.getItem('kl_workerUrl') || '';
+  if (el) el.value = localStorage.getItem('kl_workerUrl') || 'https://keywordlens-proxy.mcdowell1232.workers.dev';
 }
 
 /* Toast */
