@@ -555,16 +555,21 @@ const ApiClient = (() => {
   function getWorkerUrl() {
     return (localStorage.getItem('kl_workerUrl') || '').replace(/\/$/, '');
   }
-  async function apiFetch(endpoint, options = {}) {
+  async function apiFetch(endpoint, options = {}, timeoutMs = 25000) {
     const workerUrl = getWorkerUrl();
     if (!workerUrl) throw new ApiError('Worker URL이 설정되지 않았습니다.\n우측 상단 API 설정에서 Cloudflare Worker URL을 입력해주세요.', 'NO_WORKER_URL');
     let response;
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       response = await fetch(`${workerUrl}${endpoint}`, {
         ...options,
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
       });
+      clearTimeout(timer);
     } catch (e) {
+      if (e.name === 'AbortError') throw new ApiError(`요청 시간 초과 (${timeoutMs/1000}초)`, 'TIMEOUT');
       throw new ApiError('네트워크 오류', 'NETWORK_ERROR');
     }
     if (!response.ok) {
@@ -612,7 +617,7 @@ const ApiClient = (() => {
     const data = await apiFetch('/demographic', {
       method: 'POST',
       body: JSON.stringify({ keywords, startDate, endDate }),
-    });
+    }, 55000); // demographic은 키워드당 7회 호출로 오래 걸림
     return data.demographics || {};
   }
   async function healthCheck() { return apiFetch('/health'); }
@@ -854,11 +859,22 @@ async function runAnalysis() {
 async function runRealAnalysis() {
   updateLoadingStatus('키워드 데이터 조회 중...');
   const kwResults = await ApiClient.fetchKeywordData(keywords);
-  updateLoadingStatus('성별/연령 및 트렌드 분석 중...');
-  const [trendResults, demoResults] = await Promise.all([
-    ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice),
-    ApiClient.fetchDemographicData(keywords, trendPeriod),
-  ]);
+  updateLoadingStatus('트렌드 분석 중...');
+  let trendResults = [];
+  let demoResults = {};
+  // trend와 demographic을 각각 독립적으로 처리 (하나 실패해도 나머지는 유지)
+  try {
+    trendResults = await ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice);
+  } catch(e) {
+    console.warn('[trend] 실패, 빈 트렌드로 진행:', e.message);
+  }
+  updateLoadingStatus('성별/연령 분석 중...');
+  try {
+    demoResults = await ApiClient.fetchDemographicData(keywords, trendPeriod);
+    console.log('[demo] 수신:', demoResults);
+  } catch(e) {
+    console.warn('[demo] 실패, 기본값으로 진행:', e.message);
+  }
   updateLoadingStatus('결과 처리 중...');
   analysisData = mergeApiResults(kwResults, trendResults, demoResults, keywords);
   rawTrendData = trendResults;
@@ -872,10 +888,18 @@ async function runMockAnalysis() {
 }
 
 function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords) {
+  // 대소문자·공백 무시 매칭 헬퍼
+  function findByKw(arr, kw) {
+    if (!arr || !arr.length) return null;
+    const norm = s => (s || '').toLowerCase().trim();
+    return arr.find(r => norm(r.keyword) === norm(kw)) || null;
+  }
   return requestedKeywords.map((kw, idx) => {
-    const kwData = kwResults.find(r => r.keyword === kw) || {};
-    const trend  = trendResults.find(r => r.keyword === kw) || { data: [] };
-    const demo   = (demoResults && demoResults[kw]) || {};
+    const kwData = findByKw(kwResults, kw) || {};
+    const trend  = findByKw(trendResults, kw) || { data: [] };
+    // demoResults 키를 대소문자·공백 무시 매칭
+    const demoKey = demoResults ? Object.keys(demoResults).find(k => (k||'').toLowerCase().trim() === (kw||'').toLowerCase().trim()) : null;
+    const demo   = (demoResults && demoKey ? demoResults[demoKey] : null) || {};
     const compScore = { low: 100, mid: 60, high: 30 }[kwData.competition || 'low'];
     const total = kwData.totalSearch || 1;
     const avgCtr = ((kwData.pcCtr || 0) + (kwData.moCtr || 0)) / 2;
@@ -891,7 +915,7 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
     const trendByDevice = { all: trendArr, pc: trendArr, mo: trendArr };
     return {
       keyword: kw, color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length], index: idx,
-      found: kwData.found !== false,
+      found: Object.keys(kwData).length > 0 ? (kwData.found !== false) : false,
       totalSearch: kwData.totalSearch || 0, pcSearch: kwData.pcSearch || 0, mobileSearch: kwData.mobileSearch || 0,
       pcRatio: kwData.pcRatio || 50, mobileRatio: kwData.mobileRatio || 50,
       pcCtr: kwData.pcCtr || 0, moCtr: kwData.moCtr || 0, pcClicks: kwData.pcClicks || 0, moClicks: kwData.moClicks || 0,
