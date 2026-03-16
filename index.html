@@ -89,11 +89,33 @@ body {
 
 /* Loading */
 .loading-overlay { display: flex; justify-content: center; align-items: center; padding: 80px 0; }
-.loading-box { text-align: center; }
+.loading-box { text-align: center; min-width: 280px; }
 .loading-spinner { width: 52px; height: 52px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 18px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-.loading-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.loading-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; min-height: 20px; }
+
+/* 배치 진행 바 */
+.loading-batch-info { margin-top: 18px; background: var(--bg-secondary, #f1f5f9); border-radius: 10px; padding: 12px 16px; }
+.batch-progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.batch-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.batch-calls { font-size: 11px; color: var(--text-muted); }
+.batch-progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.batch-progress-fill { height: 100%; background: var(--primary, #03C75A); border-radius: 3px; transition: width 0.4s ease; }
+
+/* 카운트다운 */
+.loading-countdown { margin-top: 20px; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.countdown-circle { position: relative; width: 60px; height: 60px; margin: 0 auto 10px; }
+.countdown-svg { width: 60px; height: 60px; transform: rotate(-90deg); }
+.countdown-track { fill: none; stroke: var(--border); stroke-width: 3; }
+.countdown-ring  { fill: none; stroke: var(--primary, #03C75A); stroke-width: 3;
+  stroke-dasharray: 113; stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear; }
+.countdown-number { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 22px; font-weight: 800; color: var(--primary, #03C75A); }
+.countdown-label { font-size: 12px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.countdown-sub   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
 /* Empty State */
 .empty-state { text-align: center; padding: 80px 20px; }
@@ -360,6 +382,28 @@ body {
         <div class="loading-spinner"></div>
         <p class="loading-text">데이터를 불러오는 중...</p>
         <p class="loading-sub" id="loadingStatus">분석 중...</p>
+        <!-- API 배치 진행 표시 -->
+        <div class="loading-batch-info" id="loadingBatchInfo" style="display:none;">
+          <div class="batch-progress-row">
+            <span class="batch-label" id="batchLabel">배치 1 / 2 처리 중</span>
+            <span class="batch-calls" id="batchCalls">8 / 16회</span>
+          </div>
+          <div class="batch-progress-bar">
+            <div class="batch-progress-fill" id="batchProgressFill" style="width:0%"></div>
+          </div>
+        </div>
+        <!-- 배치 간 카운트다운 -->
+        <div class="loading-countdown" id="loadingCountdown" style="display:none;">
+          <div class="countdown-circle">
+            <svg viewBox="0 0 44 44" class="countdown-svg">
+              <circle class="countdown-track" cx="22" cy="22" r="18"/>
+              <circle class="countdown-ring" cx="22" cy="22" r="18" id="countdownRing"/>
+            </svg>
+            <span class="countdown-number" id="countdownNumber">1</span>
+          </div>
+          <p class="countdown-label">API 제한 준수 대기 중</p>
+          <p class="countdown-sub" id="countdownSub">다음 배치까지 잠시 기다려주세요</p>
+        </div>
       </div>
     </div>
 
@@ -680,10 +724,14 @@ const ApiClient = (() => {
   }
   async function fetchDemographicData(keywords, period = 3) {
     const { startDate, endDate } = getPeriodDates(period);
+    // 키워드 수에 따라 timeout 동적 산출
+    // 배치당 ~3초(API 응답) + 배치간 1초 대기 + 여유 5초
+    const chunks  = Math.ceil(keywords.length / 5);
+    const timeout = chunks * 4000 + 5000; // 1~5개=9초, 6~10개=13초
     const data = await apiFetch('/demographic', {
       method: 'POST',
       body: JSON.stringify({ keywords, startDate, endDate }),
-    }, 55000); // demographic은 키워드당 7회 호출로 오래 걸림
+    }, timeout);
     return data.demographics || {};
   }
   async function fetchDailyTrendData(keywords) {
@@ -1012,28 +1060,71 @@ async function runAnalysis() {
 }
 
 async function runRealAnalysis() {
+  resetBatchUI();
   updateLoadingStatus('키워드 데이터 조회 중...');
   const kwResults = await ApiClient.fetchKeywordData(keywords);
+
   updateLoadingStatus('트렌드 분석 중...');
   let trendResults = [];
-  let demoResults = {};
+  let demoResults  = {};
   try {
     trendResults = await ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice);
   } catch(e) {
     console.warn('[trend] 실패, 빈 트렌드로 진행:', e.message);
   }
-  updateLoadingStatus('성별/연령 분석 중... (최대 15초 소요)');
+
+  // ── 성별/연령 분석 — 배치 카운트다운 UI ──────────────────────────────────
+  const { chunks: totalBatches, totalCalls } = calcDemoBatches(keywords.length);
+  const waitSec = 1; // 배치 간 갭 (Worker와 동일 값 유지)
+
+  // 예상 총 대기시간 안내
+  const waitTotal = (totalBatches - 1) * waitSec;
+  const etaMsg = totalBatches > 1
+    ? `성별/연령 분석 중... (배치 ${totalBatches}개 · 약 ${waitTotal + 3}초 소요)`
+    : '성별/연령 분석 중...';
+  updateLoadingStatus(etaMsg);
+
+  // 배치 1 시작 표시
+  updateBatchProgress(1, totalBatches, 0, totalCalls);
+
   try {
+    // Worker 요청 전 진행 바 점진 업데이트 (배치 중 UI 피드백)
+    let progressTimer = null;
+    if (totalBatches > 1) {
+      // 배치1 진행 시뮬레이션 (실제 Worker 내 대기와 맞추기 위해 근사 타이머)
+      let fakeCall = 0;
+      progressTimer = setInterval(function() {
+        fakeCall = Math.min(fakeCall + 1, totalCalls);
+        const currentBatch = Math.min(Math.ceil((fakeCall / 8)), totalBatches);
+        updateBatchProgress(currentBatch, totalBatches, fakeCall, totalCalls);
+        // 배치1 완료 지점 → 카운트다운 표시 (Worker 내 sleep과 동기화)
+        if (fakeCall === 8 && totalBatches >= 2) {
+          clearInterval(progressTimer);
+          // Worker 내 setTimeout(1000)과 맞춰 카운트다운 시작
+          demoCountdown(waitSec, 1, totalBatches).then(function() {
+            updateBatchProgress(2, totalBatches, 8, totalCalls);
+          });
+        }
+      }, 400); // 400ms마다 1회씩 카운트 (배치 8회 × 400ms ≈ 3.2초 ≒ 실제 API 응답 시간)
+    }
+
     demoResults = await ApiClient.fetchDemographicData(keywords, trendPeriod);
     console.log('[demo] 수신:', demoResults);
+
+    if (progressTimer) clearInterval(progressTimer);
+    // 완료 처리
+    updateBatchProgress(totalBatches, totalBatches, totalCalls, totalCalls);
+    await sleep(300); // 완료 표시 잠깐 유지
+
   } catch(e) {
     console.warn('[demo] 실패, 기본값으로 진행:', e.message);
   }
+
+  resetBatchUI();
   updateLoadingStatus('결과 처리 중...');
   analysisData = mergeApiResults(kwResults, trendResults, demoResults, keywords);
   rawTrendData = trendResults;
 
-  // 일간 트렌드 — 백그라운드에서 1년치 로드 (결과 표시 후 비동기 실행)
   rawDailyTrendData = [];
   setTimeout(() => loadDailyTrendBackground(), 300);
 }
@@ -1104,6 +1195,61 @@ function getDefaultAgeRatio() {
     { label: '10대', ratio: 5 }, { label: '20대', ratio: 20 }, { label: '30대', ratio: 30 },
     { label: '40대', ratio: 25 }, { label: '50대', ratio: 15 }, { label: '60대+', ratio: 5 },
   ];
+}
+
+// ── API 배치 카운트다운 헬퍼 ────────────────────────────────────────────────
+// 키워드 수에 따라 예상 배치/총 호출 수를 계산하고
+// 배치 간 대기 시간을 카운트다운 UI로 표시
+function calcDemoBatches(kwCount) {
+  const chunks = Math.ceil(kwCount / 5);
+  const totalCalls = chunks * 8; // 배치당 8회 (남성+여성+연령6)
+  return { chunks, totalCalls };
+}
+
+// 배치 진행 표시 업데이트
+function updateBatchProgress(currentBatch, totalBatches, currentCalls, totalCalls) {
+  const info   = document.getElementById('loadingBatchInfo');
+  const label  = document.getElementById('batchLabel');
+  const calls  = document.getElementById('batchCalls');
+  const fill   = document.getElementById('batchProgressFill');
+  if (!info) return;
+  info.style.display = 'block';
+  label.textContent  = `배치 ${currentBatch} / ${totalBatches} 처리 중`;
+  calls.textContent  = `${currentCalls} / ${totalCalls}회`;
+  fill.style.width   = `${Math.round((currentCalls / totalCalls) * 100)}%`;
+}
+
+// 배치 간 1초 카운트다운 (UI 포함)
+async function demoCountdown(sec, currentBatch, totalBatches) {
+  const overlay   = document.getElementById('loadingCountdown');
+  const numEl     = document.getElementById('countdownNumber');
+  const subEl     = document.getElementById('countdownSub');
+  const ringEl    = document.getElementById('countdownRing');
+  const circumference = 113; // 2π × r(18) ≈ 113
+  if (!overlay) return;
+
+  overlay.style.display = 'block';
+  subEl.textContent = `배치 ${currentBatch} 완료 → 배치 ${currentBatch + 1} 준비 중`;
+
+  for (let s = sec; s >= 1; s--) {
+    numEl.textContent = s;
+    // 원형 진행 (남은 비율만큼 stroke-dashoffset)
+    if (ringEl) ringEl.style.strokeDashoffset = String(circumference * (1 - s / sec));
+    await sleep(1000);
+  }
+  // 완료 순간 즉시 숨김
+  overlay.style.display = 'none';
+  if (ringEl) ringEl.style.strokeDashoffset = '0';
+}
+
+// 배치 진행 초기화
+function resetBatchUI() {
+  const info = document.getElementById('loadingBatchInfo');
+  const cntd = document.getElementById('loadingCountdown');
+  const fill = document.getElementById('batchProgressFill');
+  if (info) info.style.display = 'none';
+  if (cntd) cntd.style.display = 'none';
+  if (fill) fill.style.width = '0%';
 }
 
 async function refreshTrendData() {
