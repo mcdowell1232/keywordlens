@@ -332,12 +332,12 @@ body {
     <section class="search-panel">
       <div class="search-panel-header">
         <h2 class="section-title">키워드 입력</h2>
-        <span class="keyword-counter"><span id="kwCount">0</span> / 5</span>
+        <span class="keyword-counter"><span id="kwCount">0</span> / 10</span>
       </div>
       <div class="keyword-input-area" id="keywordInputArea">
         <div class="keyword-tags" id="keywordTags"></div>
         <input type="text" class="keyword-input" id="keywordInput"
-          placeholder="키워드 입력 후 Enter 또는 쉼표로 추가 (최대 5개)" autocomplete="off" />
+          placeholder="키워드 입력 후 Enter 또는 쉼표로 추가 (최대 10개)" autocomplete="off" />
       </div>
       <div class="search-actions">
         <button class="btn-clear" id="btnClear"><i class="fa-solid fa-xmark"></i> 초기화</button>
@@ -462,7 +462,7 @@ body {
     <div class="empty-state" id="emptyState">
       <div class="empty-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
       <h3>키워드를 입력하고 분석을 시작하세요</h3>
-      <p>최대 5개의 키워드를 입력하여<br/>광고주 관점의 상세 데이터를 확인할 수 있습니다.</p>
+      <p>최대 10개의 키워드를 입력하여<br/>광고주 관점의 상세 데이터를 확인할 수 있습니다.</p>
     </div>
   </main>
 
@@ -578,6 +578,7 @@ function generateMockKeywordData(keyword, index) {
     found: true,
     totalSearch, pcSearch, mobileSearch, pcRatio, mobileRatio,
     maleRatio, femaleRatio, ageRatio,
+    hasDemoData: false,   // mock 데이터 = 출처 없음
     pcCtr, moCtr, pcClicks, moClicks,
     competition, competitionLabel,
     trendData: allTrendData,
@@ -945,7 +946,7 @@ const modalSave      = document.getElementById('modalSave');
 function addKeyword(kw) {
   kw = kw.trim().replace(/[,，]/g, '');
   if (!kw) return;
-  if (keywords.length >= 5) { showToast('키워드는 최대 5개까지 입력할 수 있습니다.', 'error'); return; }
+  if (keywords.length >= 10) { showToast('키워드는 최대 10개까지 입력할 수 있습니다.', 'error'); return; }
   if (keywords.includes(kw)) { showToast(`'${kw}'은(는) 이미 추가된 키워드입니다.`, 'error'); return; }
   keywords.push(kw);
   renderTags();
@@ -1012,24 +1013,18 @@ async function runAnalysis() {
 
 async function runRealAnalysis() {
   updateLoadingStatus('키워드 데이터 조회 중...');
+  // 성별/연령 데이터는 /keyword (showDetail=1) 응답의 managedKeyword에서 직접 추출
+  // → /demographic API 호출 불필요 (데이터랩 demographic은 연령별 상대 비율이라 절대 비율 왜곡 발생)
   const kwResults = await ApiClient.fetchKeywordData(keywords);
   updateLoadingStatus('트렌드 분석 중...');
   let trendResults = [];
-  let demoResults = {};
   try {
     trendResults = await ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice);
   } catch(e) {
     console.warn('[trend] 실패, 빈 트렌드로 진행:', e.message);
   }
-  updateLoadingStatus('성별/연령 분석 중...');
-  try {
-    demoResults = await ApiClient.fetchDemographicData(keywords, trendPeriod);
-    console.log('[demo] 수신:', demoResults);
-  } catch(e) {
-    console.warn('[demo] 실패, 기본값으로 진행:', e.message);
-  }
   updateLoadingStatus('결과 처리 중...');
-  analysisData = mergeApiResults(kwResults, trendResults, demoResults, keywords);
+  analysisData = mergeApiResults(kwResults, trendResults, keywords);
   rawTrendData = trendResults;
 
   // 일간 트렌드 — 백그라운드에서 1년치 로드 (결과 표시 후 비동기 실행)
@@ -1044,7 +1039,7 @@ async function runMockAnalysis() {
   rawTrendData = null;
 }
 
-function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords) {
+function mergeApiResults(kwResults, trendResults, requestedKeywords) {
   // 대소문자·공백 무시 매칭 헬퍼
   function findByKw(arr, kw) {
     if (!arr || !arr.length) return null;
@@ -1054,9 +1049,6 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
   return requestedKeywords.map((kw, idx) => {
     const kwData = findByKw(kwResults, kw) || {};
     const trend  = findByKw(trendResults, kw) || { data: [] };
-    // demoResults 키를 대소문자·공백 무시 매칭
-    const demoKey = demoResults ? Object.keys(demoResults).find(k => (k||'').toLowerCase().trim() === (kw||'').toLowerCase().trim()) : null;
-    const demo   = (demoResults && demoKey ? demoResults[demoKey] : null) || {};
     const compScore = { low: 100, mid: 60, high: 30 }[kwData.competition || 'low'];
     const total = kwData.totalSearch || 1;
     const avgCtr = ((kwData.pcCtr || 0) + (kwData.moCtr || 0)) / 2;
@@ -1070,6 +1062,17 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
       else if (last < prev - 5) trendDirection = 'down';
     }
     const trendByDevice = { all: trendArr, pc: trendArr, mo: trendArr };
+
+    // ── 성별/연령: managedKeyword 필드 우선, 없으면 기본값 ──────────────
+    // kwData.maleRatio / femaleRatio / ageRatio 는 Worker의 mergeKeywordData에서
+    // managedKeyword.maleRatio·femaleRatio·ageRate10s~60s 를 파싱해서 넘겨줌
+    // null 이면 검색량이 적거나 API에서 미제공 → 기본값 표시
+    const hasDemoData = kwData.maleRatio !== null && kwData.maleRatio !== undefined;
+    const maleRatio   = hasDemoData ? kwData.maleRatio   : 50;
+    const femaleRatio = hasDemoData ? kwData.femaleRatio : 50;
+    const ageRatio    = (kwData.ageRatio && kwData.ageRatio.length) ? kwData.ageRatio : getDefaultAgeRatio();
+    // ────────────────────────────────────────────────────────────────────
+
     return {
       keyword: kw, color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length], index: idx,
       found: Object.keys(kwData).length > 0 ? (kwData.found !== false) : false,
@@ -1077,9 +1080,8 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
       pcRatio: kwData.pcRatio || 50, mobileRatio: kwData.mobileRatio || 50,
       pcCtr: kwData.pcCtr || 0, moCtr: kwData.moCtr || 0, pcClicks: kwData.pcClicks || 0, moClicks: kwData.moClicks || 0,
       competition: kwData.competition || 'low', competitionLabel: kwData.competitionLabel || '낮음',
-      maleRatio:   demo.maleRatio   !== undefined ? demo.maleRatio   : (kwData.maleRatio   || 50),
-      femaleRatio: demo.femaleRatio !== undefined ? demo.femaleRatio : (kwData.femaleRatio || 50),
-      ageRatio:    demo.ageRatio    || kwData.ageRatio || getDefaultAgeRatio(),
+      maleRatio, femaleRatio, ageRatio,
+      hasDemoData,  // UI에서 출처 안내 표시 여부 판단용
       trendData: trendByDevice, trendDirection,
       efficiencyScore: Math.min(99, Math.max(10, efficiencyScore)),
     };
@@ -1223,7 +1225,9 @@ function buildOverviewCard(d) {
       </div>
       <div class="kw-mini-charts">
         <div class="mini-chart-box">
-          <div class="mini-chart-title">성별 비율</div>
+          <div class="mini-chart-title">성별 비율
+            ${d.hasDemoData ? '<span style="font-size:9px;color:#94A3B8;font-weight:400;margin-left:4px">광고 API 기준</span>' : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">추정</span>'}
+          </div>
           <div class="gender-bars">
             <div class="gender-row">
               <span class="gender-icon male"><i class="fa-solid fa-mars"></i></span>
@@ -1238,7 +1242,9 @@ function buildOverviewCard(d) {
           </div>
         </div>
         <div class="mini-chart-box">
-          <div class="mini-chart-title">연령대</div>
+          <div class="mini-chart-title">연령대
+            ${d.hasDemoData ? '<span style="font-size:9px;color:#94A3B8;font-weight:400;margin-left:4px">광고 API 기준</span>' : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">추정</span>'}
+          </div>
           <div class="age-bars">${ageBars}</div>
         </div>
       </div>
@@ -1286,6 +1292,11 @@ function renderTargetCharts(d) {
     <div class="target-chart-card">
       <h3><i class="fa-solid fa-venus-mars" style="color:${d.color}"></i> 성별 분포</h3>
       <p class="target-chart-subtitle">"${d.keyword}" 키워드 검색 성별 비율</p>
+      <p style="font-size:11px;color:#94A3B8;margin-top:2px;margin-bottom:2px;">
+        ${d.hasDemoData
+          ? '📊 네이버 검색광고 API (managedKeyword) 기준 · 최근 1개월 광고 노출 기반 통계'
+          : '⚠️ API 데이터 없음 — 검색량 부족으로 추정값(50:50) 표시'}
+      </p>
       <div class="gender-donut-wrap">
         <canvas id="genderDonut_${d.index}" width="160" height="160"></canvas>
         <div class="gender-legend">
@@ -1309,6 +1320,11 @@ function renderTargetCharts(d) {
     <div class="target-chart-card">
       <h3><i class="fa-solid fa-chart-bar" style="color:${d.color}"></i> 연령대 분포</h3>
       <p class="target-chart-subtitle">"${d.keyword}" 키워드 검색 연령대 비율</p>
+      <p style="font-size:11px;color:#94A3B8;margin-top:2px;margin-bottom:2px;">
+        ${d.hasDemoData
+          ? '📊 네이버 검색광고 API (managedKeyword) 기준 · 최근 1개월 광고 노출 기반 통계'
+          : '⚠️ API 데이터 없음 — 검색량 부족으로 기본값 표시'}
+      </p>
       <div class="age-chart-wrap" style="height:200px"><canvas id="ageBar_${d.index}"></canvas></div>
       <div class="insight-box">
         <span class="insight-icon">🎯</span>
