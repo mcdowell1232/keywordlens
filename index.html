@@ -146,6 +146,14 @@ body {
 .comp-mid .comp-dot { background: var(--warning); }
 .comp-low { color: var(--primary); }
 .comp-low .comp-dot { background: var(--primary); }
+/* 추정 배지 */
+.kw-badge-estimated { font-size:10px; background:#FFF7ED; color:#F59E0B; padding:2px 8px; border-radius:10px; font-weight:700; border:1px solid #FDE68A; }
+.kw-badge-nodata    { font-size:10px; background:#FEF2F2; color:#EF4444; padding:2px 7px; border-radius:10px; font-weight:600; }
+.kw-card-estimated  { border-color:#FDE68A; }
+.comp-unknown { color: var(--text-muted); }
+.comp-unknown .comp-dot { background: var(--text-muted); }
+/* CTR 없음 */
+.ctr-badge-na .ctr-badge-value { color: var(--text-muted) !important; font-size:14px !important; }
 
 /* Stats Row */
 .kw-stats-main { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
@@ -826,7 +834,7 @@ const ApiClient = (() => {
     // 인덱스 역산 방식: 청크당 4개 (로보락 포함 5개) + 9회 API + 1초 갭
     // 배치당 ~4초(API 응답) + 배치간 1초 대기 + 여유 6초
     const chunks  = Math.ceil(keywords.length / 4); // 1~4개=1배치, 5~8개=2배치, 9~10개=3배치
-    const timeout = chunks * 5000 + 6000; // 1~4개=11초, 5~8개=16초, 9~10개=21초
+    const timeout = chunks * 8000 + 10000; // 1~4개=18초, 5~8개=26초, 9~10개=34초 (여유있게)
     const data = await apiFetch('/demographic', {
       method: 'POST',
       body: JSON.stringify({ keywords, startDate, endDate }),
@@ -1352,10 +1360,8 @@ async function runRealAnalysis() {
 }
 
 async function runMockAnalysis() {
-  const steps = ['검색광고 API 연결 중...','키워드 데이터 조회 중...','트렌드 데이터 수집 중...','결과 처리 중...'];
-  for (let i = 0; i < steps.length; i++) { updateLoadingStatus(steps[i]); await sleep(250); }
-  analysisData = generateMockData(keywords);
-  rawTrendData = null;
+  // Worker URL이 설정되지 않은 경우 — 목업 데이터 대신 안내 메시지 표시
+  throw new Error('NO_WORKER_URL');
 }
 
 function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords) {
@@ -1379,8 +1385,12 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
 
     const compScore = { low: 100, mid: 60, high: 30 }[kwData.competition || 'low'];
     const total = kwData.totalSearch || 1;
-    const avgCtr = ((kwData.pcCtr || 0) + (kwData.moCtr || 0)) / 2;
-    const efficiencyScore = Math.round((Math.log10(Math.max(total, 10)) / 5) * 35 + (avgCtr / 6) * 35 + (compScore / 100) * 30);
+    // estimated(추정)이면 CTR 없으므로 효율점수 검색량+경쟁도만으로 산출
+    const isEstimated = !!kwData.estimated;
+    const avgCtr = isEstimated ? 0 : (((kwData.pcCtr || 0) + (kwData.moCtr || 0)) / 2);
+    const effBase = isEstimated
+      ? Math.round((Math.log10(Math.max(total, 10)) / 5) * 50 + (compScore / 100) * 50)
+      : Math.round((Math.log10(Math.max(total, 10)) / 5) * 35 + (avgCtr / 6) * 35 + (compScore / 100) * 30);
     const trendArr = trend.data || [];
     let trendDirection = 'flat';
     if (trendArr.length >= 2) {
@@ -1391,23 +1401,38 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
     }
     const trendByDevice = { all: trendArr, pc: trendArr, mo: trendArr };
 
-    // ── 성별/연령: demographic API 결과 우선, 없으면 기본값 ──
-    const hasDemoData = demo && (demo.maleRatio !== undefined || (demo.ageRatio && demo.ageRatio.length));
-    const maleRatio   = (demo && demo.maleRatio   !== undefined) ? demo.maleRatio   : 50;
-    const femaleRatio = (demo && demo.femaleRatio !== undefined) ? demo.femaleRatio : 50;
-    const ageRatio    = (demo && demo.ageRatio && demo.ageRatio.length) ? demo.ageRatio : getDefaultAgeRatio();
+    // ── 성별/연령: /keyword 응답에 포함된 값 우선, 그 다음 demographic API, 없으면 기본값 ──
+    // estimated 키워드는 /keyword에서 이미 성비/연령비를 역산해서 내려줌
+    const kwHasDemo   = kwData.maleRatio !== undefined && kwData.maleRatio !== null;
+    const demoHasData = demo && (demo.maleRatio !== undefined || (demo.ageRatio && demo.ageRatio.length));
+    const hasDemoData = kwHasDemo || demoHasData;
+    const maleRatio   = kwHasDemo
+      ? kwData.maleRatio
+      : ((demo && demo.maleRatio   !== undefined) ? demo.maleRatio   : 50);
+    const femaleRatio = kwHasDemo
+      ? kwData.femaleRatio
+      : ((demo && demo.femaleRatio !== undefined) ? demo.femaleRatio : 50);
+    const ageRatio    = (kwData.ageRatio && kwData.ageRatio.length)
+      ? kwData.ageRatio
+      : ((demo && demo.ageRatio && demo.ageRatio.length) ? demo.ageRatio : getDefaultAgeRatio());
 
     return {
       keyword: kw, color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length], index: idx,
-      found: Object.keys(kwData).length > 0 ? (kwData.found !== false) : false,
+      found:     Object.keys(kwData).length > 0 ? (kwData.found !== false) : false,
+      estimated: isEstimated,
       totalSearch: kwData.totalSearch || 0, pcSearch: kwData.pcSearch || 0, mobileSearch: kwData.mobileSearch || 0,
       pcRatio: kwData.pcRatio || 50, mobileRatio: kwData.mobileRatio || 50,
-      pcCtr: kwData.pcCtr || 0, moCtr: kwData.moCtr || 0, pcClicks: kwData.pcClicks || 0, moClicks: kwData.moClicks || 0,
-      competition: kwData.competition || 'low', competitionLabel: kwData.competitionLabel || '낮음',
+      // estimated이면 CTR/클릭수/경쟁도 null → 화면에서 '-' 표시
+      pcCtr:   isEstimated ? null : (kwData.pcCtr   != null ? kwData.pcCtr   : null),
+      moCtr:   isEstimated ? null : (kwData.moCtr   != null ? kwData.moCtr   : null),
+      pcClicks: isEstimated ? null : (kwData.pcClicks != null ? kwData.pcClicks : null),
+      moClicks: isEstimated ? null : (kwData.moClicks != null ? kwData.moClicks : null),
+      competition:      isEstimated ? null   : (kwData.competition      || 'low'),
+      competitionLabel: isEstimated ? null   : (kwData.competitionLabel || '낮음'),
       maleRatio, femaleRatio, ageRatio,
       hasDemoData,
       trendData: trendByDevice, trendDirection,
-      efficiencyScore: Math.min(99, Math.max(10, efficiencyScore)),
+      efficiencyScore: Math.min(99, Math.max(10, effBase)),
     };
   });
 }
@@ -1494,18 +1519,15 @@ async function refreshTrendData() {
 }
 
 function handleApiError(err) {
-  if (err instanceof ApiError && err.code === 'NO_WORKER_URL') {
-    // Worker URL 없으면 그냥 Mock으로 실행
-    const mockData = generateMockData(keywords);
-    analysisData = mockData;
-    renderResults();
+  if (err instanceof ApiError && err.code === 'NO_WORKER_URL'
+    || (err instanceof Error && err.message === 'NO_WORKER_URL')) {
+    // Worker URL 미설정 — 목업 없이 안내 표시
+    showLoading(false);
+    showToast('⚙️ 우측 상단 설정에서 Cloudflare Worker URL을 입력해 주세요.', 'error');
     return;
   }
-  showToast('오류가 발생했습니다. Mock 데이터로 표시합니다.', 'error');
-  if (!analysisData.length) {
-    analysisData = generateMockData(keywords);
-    renderResults();
-  }
+  showToast('오류가 발생했습니다: ' + (err.message || '알 수 없는 오류'), 'error');
+  // 기존 결과가 없으면 빈 화면 유지 (목업 표시 안 함)
 }
 
 function showLoading(show, msg) {
@@ -1555,31 +1577,52 @@ function renderOverview() {
 }
 
 function buildOverviewCard(d) {
-  const compClass = { high: 'comp-high', mid: 'comp-mid', low: 'comp-low' }[d.competition];
-  const trendIcon = { up: '↑', down: '↓', flat: '→' }[d.trendDirection];
-  const trendColor = { up: '#10B981', down: '#EF4444', flat: '#94A3B8' }[d.trendDirection];
-  const maxAge = Math.max(...d.ageRatio.map(a => a.ratio));
-  const ageBars = d.ageRatio.map(a => `
+  // estimated: SearchAd 미등록 → DataLab 역산값
+  const isEstimated = !!d.estimated;
+  const compClass   = d.competition ? ({ high: 'comp-high', mid: 'comp-mid', low: 'comp-low' }[d.competition]) : 'comp-unknown';
+  const compLabel   = d.competitionLabel || '-';
+  const trendIcon   = { up: '↑', down: '↓', flat: '→' }[d.trendDirection] || '→';
+  const trendColor  = { up: '#10B981', down: '#EF4444', flat: '#94A3B8' }[d.trendDirection] || '#94A3B8';
+  const maxAge      = Math.max(...d.ageRatio.map(a => a.ratio));
+  const ageBars     = d.ageRatio.map(a => `
     <div class="age-bar-col">
       <div class="age-bar-fill" style="height:${Math.round((a.ratio / maxAge) * 36)}px;background:${a.ratio === maxAge ? d.color : d.color + '55'}"></div>
       <span class="age-bar-lbl">${a.label.replace('대', '')}</span>
     </div>
   `).join('');
-  const notFoundBadge = !d.found ? `<span style="font-size:10px;background:#FEF2F2;color:#EF4444;padding:2px 7px;border-radius:10px;font-weight:600">데이터 없음</span>` : '';
+
+  // 상태 배지: (추정) or 데이터없음
+  const statusBadge = isEstimated
+    ? `<span class="kw-badge-estimated">추정</span>`
+    : (!d.found ? `<span class="kw-badge-nodata">데이터 없음</span>` : '');
+
+  // CTR/클릭수: null이면 '-'
+  const pcCtrTxt    = d.pcCtr    != null ? d.pcCtr + '%'              : '-';
+  const moCtrTxt    = d.moCtr    != null ? d.moCtr + '%'              : '-';
+  const pcClicksTxt = d.pcClicks != null ? formatNumber(d.pcClicks) + ' 클릭' : '-';
+  const moClicksTxt = d.moClicks != null ? formatNumber(d.moClicks) + ' 클릭' : '-';
+
+  // 데이터 출처 표시
+  const demoSrcLabel = d.hasDemoData
+    ? '<span style="font-size:9px;color:#94A3B8;font-weight:400;margin-left:4px">광고 API</span>'
+    : (isEstimated
+        ? '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">DataLab 추정</span>'
+        : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">추정</span>');
+
   return `
-    <div class="kw-card${!d.found ? ' kw-card-empty' : ''}">
+    <div class="kw-card${isEstimated ? ' kw-card-estimated' : (!d.found ? ' kw-card-empty' : '')}">
       <div class="kw-card-header">
         <div class="kw-color-dot" style="background:${d.color}"></div>
         <span class="kw-card-title">${d.keyword}</span>
-        ${notFoundBadge}
-        <span class="kw-competition ${compClass}"><span class="comp-dot"></span>${d.competitionLabel}</span>
+        ${statusBadge}
+        <span class="kw-competition ${compClass}"><span class="comp-dot"></span>${compLabel}</span>
         <span style="font-size:13px;font-weight:700;color:${trendColor}">${trendIcon}</span>
       </div>
       <div class="kw-stats-main">
         <div class="stat-item">
           <div class="stat-label">월 총 검색량</div>
           <div class="stat-value highlight">${formatNumber(d.totalSearch)}</div>
-          <div class="stat-sub">최근 1개월</div>
+          <div class="stat-sub">최근 1개월${isEstimated ? ' <span style="color:#F59E0B">*추정</span>' : ''}</div>
         </div>
         <div class="stat-item">
           <div class="stat-label">PC 검색량</div>
@@ -1604,9 +1647,7 @@ function buildOverviewCard(d) {
       </div>
       <div class="kw-mini-charts">
         <div class="mini-chart-box">
-          <div class="mini-chart-title">성별 비율
-            ${d.hasDemoData ? '<span style="font-size:9px;color:#94A3B8;font-weight:400;margin-left:4px">광고 API 기준</span>' : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">추정</span>'}
-          </div>
+          <div class="mini-chart-title">성별 비율 ${demoSrcLabel}</div>
           <div class="gender-bars">
             <div class="gender-row">
               <span class="gender-icon male"><i class="fa-solid fa-mars"></i></span>
@@ -1621,22 +1662,20 @@ function buildOverviewCard(d) {
           </div>
         </div>
         <div class="mini-chart-box">
-          <div class="mini-chart-title">연령대
-            ${d.hasDemoData ? '<span style="font-size:9px;color:#94A3B8;font-weight:400;margin-left:4px">광고 API 기준</span>' : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">추정</span>'}
-          </div>
+          <div class="mini-chart-title">연령대 ${demoSrcLabel}</div>
           <div class="age-bars">${ageBars}</div>
         </div>
       </div>
       <div class="ctr-badges">
-        <div class="ctr-badge pc-badge">
+        <div class="ctr-badge pc-badge${d.pcCtr == null ? ' ctr-badge-na' : ''}">
           <div class="ctr-badge-label">PC CTR</div>
-          <div class="ctr-badge-value">${d.pcCtr}%</div>
-          <div class="ctr-badge-sub">${formatNumber(d.pcClicks)} 클릭</div>
+          <div class="ctr-badge-value">${pcCtrTxt}</div>
+          <div class="ctr-badge-sub">${pcClicksTxt}</div>
         </div>
-        <div class="ctr-badge mo-badge">
+        <div class="ctr-badge mo-badge${d.moCtr == null ? ' ctr-badge-na' : ''}">
           <div class="ctr-badge-label">MO CTR</div>
-          <div class="ctr-badge-value">${d.moCtr}%</div>
-          <div class="ctr-badge-sub">${formatNumber(d.moClicks)} 클릭</div>
+          <div class="ctr-badge-value">${moCtrTxt}</div>
+          <div class="ctr-badge-sub">${moClicksTxt}</div>
         </div>
       </div>
     </div>
@@ -1929,7 +1968,6 @@ function renderDailyTrendChart(dailyResults, period) {
   const totalPts = filteredResults[0].data.length;
   const tickStep = totalPts > 270 ? 30 : totalPts > 150 ? 14 : totalPts > 60 ? 7 : 3;
 
-  
   dailyChartInstance = new Chart(canvas, {
     type: 'line',
     data: { labels, datasets },
@@ -2054,11 +2092,11 @@ function renderEfficiency() {
           </div>
         </td>
         <td class="num-value">${formatNumber(d.totalSearch)}</td>
-        <td class="num-value">${formatNumber(d.pcClicks)}</td>
-        <td class="num-value">${formatNumber(d.moClicks)}</td>
-        <td class="ctr-value" style="color:#4F46E5">${d.pcCtr}%</td>
-        <td class="ctr-value" style="color:#03C75A">${d.moCtr}%</td>
-        <td><span class="comp-badge ${d.competition}"><span class="comp-dot"></span>${d.competitionLabel}</span></td>
+        <td class="num-value">${d.pcClicks != null ? formatNumber(d.pcClicks) : '-'}</td>
+        <td class="num-value">${d.moClicks != null ? formatNumber(d.moClicks) : '-'}</td>
+        <td class="ctr-value" style="color:#4F46E5">${d.pcCtr != null ? d.pcCtr + '%' : '-'}</td>
+        <td class="ctr-value" style="color:#03C75A">${d.moCtr != null ? d.moCtr + '%' : '-'}</td>
+        <td>${d.competition ? `<span class="comp-badge ${d.competition}"><span class="comp-dot"></span>${d.competitionLabel}</span>` : '<span style="color:var(--text-muted)">-</span>'}</td>
         <td>
           <div class="score-bar-wrap">
             <div class="score-bar-bg"><div class="score-bar-fill" style="width:${d.efficiencyScore}%;background:${scoreColor}"></div></div>
