@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>네이버 키워드 분석 도구 – KeywordLens</title>
+  <title>팅모의 KeywordLens – 네이버 키워드 분석</title>
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 /* ===================================================
-   KeywordLens - 네이버 키워드 분석 도구
+   팅모의 KeywordLens – 네이버 키워드 분석
 =================================================== */
 :root {
   --primary: #03C75A;
@@ -505,7 +505,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -525,123 +525,202 @@ body {
   padding: 2px 10px;
   border-radius: 20px;
 }
-.related-results-meta {
-  font-size: 12px;
-  color: var(--text-muted);
+.related-results-meta { font-size: 12px; color: var(--text-muted); }
+
+/* 필터 바 */
+.related-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  margin-bottom: 12px;
 }
+.related-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.related-filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.related-filter-btn {
+  padding: 4px 11px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.related-filter-btn:hover { border-color: #6366F1; color: #6366F1; }
+.related-filter-btn.active { background: #6366F1; border-color: #6366F1; color: #fff; }
+.related-filter-divider {
+  width: 1px; height: 20px;
+  background: var(--border);
+  margin: 0 2px;
+}
+.related-search-wrap {
+  margin-left: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.related-search-input {
+  padding: 5px 10px 5px 30px;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--text-primary);
+  outline: none;
+  width: 140px;
+  transition: border-color .15s, width .2s;
+}
+.related-search-input:focus { border-color: #6366F1; width: 180px; }
+.related-search-icon {
+  position: absolute;
+  left: 9px;
+  color: var(--text-muted);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* 로딩 */
 .related-loading {
   text-align: center;
   padding: 24px;
   color: var(--text-muted);
   font-size: 13px;
 }
-.related-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
+
+/* 테이블 */
+.related-list { display: flex; flex-direction: column; }
 .related-row {
   display: grid;
-  grid-template-columns: 28px 1fr 100px 80px 80px 90px;
+  grid-template-columns: 36px 1fr 160px 90px 90px 64px;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 10px;
+  padding: 9px 14px;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
-  transition: background .12s;
+  transition: background .1s;
 }
-.related-row:hover { background: var(--surface-2); }
+.related-row:last-child { border-bottom: none; }
+.related-row:hover { background: #f8faff; }
+
+/* 헤더 행 */
 .related-row.related-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
   background: var(--surface-2);
   border-radius: 8px 8px 0 0;
   padding: 8px 14px;
   border-bottom: 2px solid var(--border);
-}
-.related-rank {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-align: center;
-}
-.related-rank.top3 { color: #F59E0B; }
-.related-kw {
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: color .15s;
-}
-.related-kw:hover { color: #6366F1; text-decoration: underline; }
-.related-total { font-weight: 700; color: var(--text-primary); text-align: right; }
-.related-pc, .related-mo { text-align: right; color: var(--text-secondary); }
-.related-comp { text-align: center; }
-.related-bar-wrap {
-  grid-column: 1 / -1;
-  padding: 0 14px 8px;
-  display: none;
-}
-.related-bar-bg {
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.related-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #6366F1, #8B5CF6);
-  border-radius: 2px;
-  transition: width .4s ease;
-}
-/* 검색량 인라인 바 */
-.related-vol-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.related-vol-bar-bg {
-  flex: 1;
-  height: 6px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-  min-width: 40px;
-}
-.related-vol-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #6366F1 0%, #A78BFA 100%);
-  border-radius: 3px;
-  transition: width .5s ease;
-}
-.related-vol-num {
-  font-weight: 700;
-  color: var(--text-primary);
-  font-size: 13px;
-  min-width: 52px;
-  text-align: right;
-  flex-shrink: 0;
-}
-.related-add-btn {
-  background: #EEF2FF;
-  border: 1px solid #C7D2FE;
-  color: #6366F1;
-  border-radius: 6px;
-  padding: 3px 10px;
   font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
-  font-family: inherit;
+  color: var(--text-muted);
+  cursor: default;
 }
-.related-add-btn:hover { background: #6366F1; color: #fff; border-color: #6366F1; }
-.related-add-btn:disabled { background: #f1f5f9; color: #94A3B8; border-color: #e2e8f0; cursor: not-allowed; }
-@media (max-width: 600px) {
-  .related-row { grid-template-columns: 24px 1fr 90px 70px; }
-  .related-row .related-pc { display: none; }
-  .related-row .related-comp { display: none; }
+.related-row.related-header:hover { background: var(--surface-2); }
+.related-col-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s;
+  white-space: nowrap;
+}
+.related-col-sort:hover { color: #6366F1; }
+.related-col-sort.active { color: #6366F1; }
+.sort-arrow {
+  font-size: 10px;
+  color: #CBD5E1;
+  transition: color .15s, transform .15s;
+}
+.related-col-sort.active .sort-arrow { color: #6366F1; }
+.related-col-sort.asc .sort-arrow { transform: rotate(180deg); }
+
+/* 셀 */
+.related-rank { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
+.related-rank.top3 { color: #F59E0B; }
+.related-kw { font-weight: 600; color: var(--text-primary); cursor: pointer; }
+.related-kw:hover { color: #6366F1; text-decoration: underline; }
+
+/* 검색량 바 */
+.related-vol-cell { display: flex; flex-direction: column; gap: 3px; }
+.related-vol-top { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.related-vol-num { font-weight: 700; color: var(--text-primary); font-size: 13px; min-width: 48px; text-align: right; }
+.related-vol-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; min-width: 40px; }
+.related-vol-bar-fill { height: 100%; background: linear-gradient(90deg,#6366F1,#A78BFA); border-radius: 2px; transition: width .4s ease; }
+.related-sub-num { font-size: 12px; color: var(--text-secondary); text-align: right; }
+
+/* 경쟁도 */
+.related-comp { text-align: center; }
+.comp-chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.comp-chip.high { background: #FEE2E2; color: #DC2626; }
+.comp-chip.mid  { background: #FEF3C7; color: #D97706; }
+.comp-chip.low  { background: #DCFCE7; color: #16A34A; }
+
+/* 페이지네이션 */
+.related-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 0 4px;
+  flex-wrap: wrap;
+}
+.rel-page-btn {
+  min-width: 32px; height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  font-family: inherit;
+  padding: 0 6px;
+}
+.rel-page-btn:hover:not(:disabled) { border-color: #6366F1; color: #6366F1; }
+.rel-page-btn.active { background: #6366F1; border-color: #6366F1; color: #fff; }
+.rel-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 빈 상태 */
+.related-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* 미니 도넛 + 연령 % */
+.gender-mini-wrap { display:flex; align-items:center; gap:8px; }
+.gender-mini-donut { flex-shrink:0; }
+.age-bar-col { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.age-bar-pct { font-size:9px; font-weight:700; line-height:1; min-height:12px; }
+
+@media (max-width: 640px) {
+  .related-row { grid-template-columns: 28px 1fr 110px 64px; }
+  .related-row > .related-comp { display: none; }
+  .related-row > .related-sub-num:last-of-type { display: none; }
+  .related-filter-bar { gap: 6px; }
+  .related-search-wrap { margin-left: 0; width: 100%; }
+  .related-search-input { width: 100%; }
 }
 
 </style>
@@ -667,7 +746,7 @@ body {
     <div class="header-inner">
       <div class="logo">
         <span class="logo-icon"><i class="fa-solid fa-chart-line"></i></span>
-        <span class="logo-text">KeywordLens</span>
+        <span class="logo-text">팅모의 <span style="color:var(--primary)">KeywordLens</span></span>
         <span class="logo-badge">NAVER</span>
       </div>
       <div class="header-right">
@@ -710,18 +789,17 @@ body {
         <button class="related-option-toggle" id="relatedOptionToggle">
           <i class="fa-solid fa-magnifying-glass-plus"></i>
           <span>연관검색어 퀵조회</span>
+          <label class="related-option-switch" style="margin-left:8px" onclick="event.stopPropagation()">
+            <input type="checkbox" id="relatedOptionEnabled">
+            <span class="related-switch-slider"></span>
+          </label>
           <i class="fa-solid fa-chevron-down related-toggle-icon" id="relatedToggleIcon"></i>
         </button>
-        <div class="related-option-panel" id="relatedOptionPanel" style="display:none">
+        <div class="related-option-panel" id="relatedOptionPanel" style="display:block">
           <div class="related-option-desc">
             <i class="fa-solid fa-circle-info" style="color:#6366F1"></i>
             <span>입력창의 <strong>첫 번째 키워드</strong>를 기준으로 네이버 연관검색어의 월간 검색량을 조회합니다.<br>분석 시작 후 <strong>키워드 개요</strong> 탭 하단에서 결과를 확인하세요.</span>
           </div>
-          <label class="related-option-switch">
-            <input type="checkbox" id="relatedOptionEnabled">
-            <span class="related-switch-slider"></span>
-            <span class="related-switch-label">연관검색어 퀵조회 활성화</span>
-          </label>
         </div>
       </div>
     </section>
@@ -775,10 +853,44 @@ body {
             </div>
             <div class="related-results-meta" id="relatedResultsMeta"></div>
           </div>
+          <!-- 필터 바 -->
+          <div class="related-filter-bar" id="relatedFilterBar">
+            <!-- 경쟁도 -->
+            <div class="related-filter-group">
+              <span class="related-filter-label">경쟁도</span>
+              <button class="related-filter-btn active" data-filter="comp" data-val="all">전체</button>
+              <button class="related-filter-btn" data-filter="comp" data-val="low">낮음</button>
+              <button class="related-filter-btn" data-filter="comp" data-val="mid">보통</button>
+              <button class="related-filter-btn" data-filter="comp" data-val="high">높음</button>
+            </div>
+            <div class="related-filter-divider"></div>
+            <!-- 디바이스 -->
+            <div class="related-filter-group">
+              <span class="related-filter-label">디바이스</span>
+              <button class="related-filter-btn active" data-filter="device" data-val="all">전체</button>
+              <button class="related-filter-btn" data-filter="device" data-val="pc">PC 우세</button>
+              <button class="related-filter-btn" data-filter="device" data-val="mo">모바일 우세</button>
+            </div>
+            <div class="related-filter-divider"></div>
+            <!-- 최소 검색량 -->
+            <div class="related-filter-group">
+              <span class="related-filter-label">최소 검색량</span>
+              <button class="related-filter-btn active" data-filter="minvol" data-val="0">전체</button>
+              <button class="related-filter-btn" data-filter="minvol" data-val="100">100+</button>
+              <button class="related-filter-btn" data-filter="minvol" data-val="1000">1,000+</button>
+              <button class="related-filter-btn" data-filter="minvol" data-val="10000">10,000+</button>
+            </div>
+            <!-- 키워드 검색 -->
+            <div class="related-search-wrap">
+              <i class="fa-solid fa-magnifying-glass related-search-icon"></i>
+              <input type="text" class="related-search-input" id="relatedSearchInput" placeholder="키워드 검색...">
+            </div>
+          </div>
           <div class="related-loading" id="relatedLoading" style="display:none">
             <i class="fa-solid fa-circle-notch fa-spin"></i> 연관검색어 조회 중...
           </div>
           <div class="related-list" id="relatedList"></div>
+          <div class="related-pagination" id="relatedPagination"></div>
         </div>
       </div>
       <div class="tab-content" id="tab-target">
@@ -795,10 +907,10 @@ body {
             <button class="period-btn" data-period="12">1년</button>
           </div>
           <div class="trend-view-toggle" id="trendViewToggle">
-            <button class="view-toggle-btn active" data-view="ratio">
+            <button class="view-toggle-btn" data-view="ratio">
               <i class="fa-solid fa-percent"></i> 비율
             </button>
-            <button class="view-toggle-btn" data-view="volume">
+            <button class="view-toggle-btn active" data-view="volume">
               <i class="fa-solid fa-magnifying-glass"></i> 검색량
             </button>
           </div>
@@ -806,6 +918,10 @@ body {
         <div class="trend-volume-notice" id="trendVolumeNotice" style="display:none">
           <i class="fa-solid fa-circle-info"></i>
           <span>검색량은 <strong>월간 검색량 × 트렌드 비율</strong>로 역산한 <strong>추정치</strong>입니다. 실제값과 차이가 있을 수 있습니다.</span>
+        </div>
+        <div class="trend-volume-notice" id="trendNoDataNotice" style="display:none;border-color:#F59E0B;background:#FFFBEB;">
+          <i class="fa-solid fa-triangle-exclamation" style="color:#F59E0B"></i>
+          <span style="color:#92400E"><span class="trend-nodata-kws" style="font-weight:700"></span> 키워드는 네이버 데이터랩이 영문·혼합 키워드 트렌드를 미지원하여 트렌드 데이터가 없습니다.</span>
         </div>
 
         <!-- 월간 트렌드 -->
@@ -1266,7 +1382,7 @@ Chart.register(ChartDataLabels);
 let trendChartInstance = null;
 let genderChartInstances = {};
 let ageChartInstances = {};
-let trendViewMode = 'ratio'; // 'ratio' | 'volume'
+let trendViewMode = 'volume'; // 'ratio' | 'volume' — 기본: 검색량
 
 const GENDER_COLORS = { male: '#3B82F6', female: '#EC4899' };
 const AGE_COLORS = ['#818CF8','#A78BFA','#4F46E5','#6366F1','#3B82F6','#06B6D4'];
@@ -1364,29 +1480,40 @@ function renderTrendChart(allData, period, device) {
 
   const labels = filteredData[0]?.filteredTrend.map(t => formatPeriodLabel(t.period, period <= 3)) || [];
 
+  // 트렌드 없는 키워드 안내 (영문·혼합 등 DataLab 미지원)
+  const noDataKws = filteredData.filter(d => !d.filteredTrend.length).map(d => d.keyword);
+  const noDataNotice = document.getElementById('trendNoDataNotice');
+  if (noDataNotice) {
+    if (noDataKws.length > 0) {
+      noDataNotice.style.display = 'flex';
+      noDataNotice.querySelector('.trend-nodata-kws').textContent =
+        noDataKws.map(k => `"${k}"`).join(', ');
+    } else {
+      noDataNotice.style.display = 'none';
+    }
+  }
+
   const datasets = filteredData.map(d => ({
     label: d.keyword,
     data: isVolume
       ? d.filteredVolume.map(t => t.volume)
       : d.filteredTrend.map(t => t.ratio),
+    backgroundColor: d.color + 'CC',
     borderColor: d.color,
-    backgroundColor: d.color + '15',
-    borderWidth: 2.5,
-    pointRadius: 4, pointHoverRadius: 7,
-    pointBackgroundColor: d.color,
-    pointBorderColor: '#fff', pointBorderWidth: 2,
-    fill: filteredData.length === 1, tension: 0.35
+    borderWidth: 1.5,
+    borderRadius: 4,
+    borderSkipped: false,
   }));
 
   // Y축 최대값 계산
   const allValues = datasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v));
   const maxVal = allValues.length ? Math.max(...allValues) : (isVolume ? 1000 : 100);
   const yMax = isVolume
-    ? Math.ceil(maxVal * 1.2 / 1000) * 1000 || 1000
-    : 100;
+    ? Math.ceil(maxVal * 1.3 / 1000) * 1000 || 1000
+    : 110;
 
   trendChartInstance = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -1400,18 +1527,30 @@ function renderTrendChart(allData, period, device) {
           callbacks: {
             label: (ctx) => {
               const v = ctx.parsed.y;
-              if (isVolume) {
-                return `  ${ctx.dataset.label}: 약 ${formatNumber(v)}회`;
-              }
-              return `  ${ctx.dataset.label}: ${v}`;
+              if (isVolume) return `  ${ctx.dataset.label}: 약 ${formatNumber(v)}회`;
+              return `  ${ctx.dataset.label}: ${v}%`;
             }
           }
         },
-        datalabels: { display: false }
+        datalabels: {
+          display: (ctx) => {
+            // 막대가 너무 작으면 숨김, 키워드가 3개 이상이면 숨김
+            if (filteredData.length > 2) return false;
+            const v = ctx.dataset.data[ctx.dataIndex];
+            if (!v) return false;
+            return (v / maxVal) > 0.08;
+          },
+          anchor: 'end', align: 'end',
+          color: (ctx) => filteredData[ctx.datasetIndex]?.color || '#475569',
+          font: { ...BASE_FONT, size: 10, weight: '700' },
+          formatter: (v) => isVolume ? formatVolumeShort(v) : v + '%',
+          offset: -2,
+          clamp: true,
+        }
       },
       scales: {
         x: {
-          grid: { color: '#F1F5F9', drawBorder: false },
+          grid: { display: false },
           border: { display: false },
           ticks: { font: BASE_FONT, color: '#94A3B8' }
         },
@@ -1422,8 +1561,8 @@ function renderTrendChart(allData, period, device) {
           border: { display: false },
           ticks: {
             font: BASE_FONT, color: '#94A3B8',
-            maxTicksLimit: 6,
-            callback: (v) => isVolume ? formatVolumeShort(v) : v
+            maxTicksLimit: 5,
+            callback: (v) => isVolume ? formatVolumeShort(v) : v + '%'
           }
         }
       }
@@ -1488,8 +1627,13 @@ const modalClose     = document.getElementById('modalClose');
 const modalCancel    = document.getElementById('modalCancel');
 const modalSave      = document.getElementById('modalSave');
 
+function normalizeKeyword(kw) {
+  // 띄어쓰기 제거 + 영문 소문자 변환 (네이버 API 기준)
+  return kw.trim().replace(/[,，]/g, '').replace(/\s+/g, '').toLowerCase();
+}
+
 function addKeyword(kw) {
-  kw = kw.trim().replace(/[,，]/g, '');
+  kw = normalizeKeyword(kw);
   if (!kw) return;
   if (keywords.length >= 6) { showToast('키워드는 최대 6개까지 입력할 수 있습니다.', 'error'); return; }
   if (keywords.includes(kw)) { showToast(`'${kw}'은(는) 이미 추가된 키워드입니다.`, 'error'); return; }
@@ -1660,20 +1804,16 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
     }
     const trendByDevice = { all: trendArr, pc: trendArr, mo: trendArr };
 
-    // ── 성별/연령: /keyword 응답에 포함된 값 우선, 그 다음 demographic API, 없으면 기본값 ──
-    // estimated 키워드는 /keyword에서 이미 성비/연령비를 역산해서 내려줌
-    const kwHasDemo   = kwData.maleRatio !== undefined && kwData.maleRatio !== null;
-    const demoHasData = demo && (demo.maleRatio !== undefined || (demo.ageRatio && demo.ageRatio.length));
-    const hasDemoData = kwHasDemo || demoHasData;
-    const maleRatio   = kwHasDemo
-      ? kwData.maleRatio
-      : ((demo && demo.maleRatio   !== undefined) ? demo.maleRatio   : 50);
-    const femaleRatio = kwHasDemo
-      ? kwData.femaleRatio
-      : ((demo && demo.femaleRatio !== undefined) ? demo.femaleRatio : 50);
-    const ageRatio    = (kwData.ageRatio && kwData.ageRatio.length)
-      ? kwData.ageRatio
-      : ((demo && demo.ageRatio && demo.ageRatio.length) ? demo.ageRatio : getDefaultAgeRatio());
+    // ── 성별/연령: /keyword 응답에 포함된 값 우선, 없으면 기본값 ──
+    // Worker가 hasDemoData 플래그를 직접 내려줌:
+    //   true  = DataLab에서 실제 데이터 수집 성공
+    //   false = 영문/혼합 키워드 등 DataLab 데이터 없어 인덱스 기본값 사용
+    const maleRatio   = (kwData.maleRatio   !== undefined && kwData.maleRatio   !== null) ? kwData.maleRatio   : 50;
+    const femaleRatio = (kwData.femaleRatio !== undefined && kwData.femaleRatio !== null) ? kwData.femaleRatio : 50;
+    const ageRatio    = (kwData.ageRatio && kwData.ageRatio.length) ? kwData.ageRatio : getDefaultAgeRatio();
+    // Worker가 내린 hasDemoData 사용 (없으면 maleRatio 존재 여부로 판단)
+    const hasDemoData = (kwData.hasDemoData !== undefined) ? kwData.hasDemoData
+      : (kwData.maleRatio !== undefined && kwData.maleRatio !== null);
 
     return {
       keyword: kw, color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length], index: idx,
@@ -1837,6 +1977,29 @@ function switchTab(tab) {
 
 function renderOverview() {
   document.getElementById('overviewGrid').innerHTML = analysisData.map(d => buildOverviewCard(d)).join('');
+  // 미니 도넛 차트 렌더 (개요 카드용)
+  setTimeout(() => {
+    analysisData.forEach(d => {
+      const ctx = document.getElementById(`miniDonut_${d.index}`);
+      if (!ctx) return;
+      if (ctx._chartInstance) ctx._chartInstance.destroy();
+      ctx._chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [d.maleRatio, d.femaleRatio],
+            backgroundColor: ['#3B82F6', '#EC4899'],
+            borderWidth: 2, borderColor: '#fff', hoverOffset: 0
+          }]
+        },
+        options: {
+          responsive: false, cutout: '65%',
+          plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } },
+          animation: { duration: 400 }
+        }
+      });
+    });
+  }, 50);
 }
 
 function buildOverviewCard(d) {
@@ -1849,6 +2012,7 @@ function buildOverviewCard(d) {
   const maxAge      = Math.max(...d.ageRatio.map(a => a.ratio));
   const ageBars     = d.ageRatio.map(a => `
     <div class="age-bar-col">
+      <span class="age-bar-pct" style="color:${a.ratio === maxAge ? d.color : '#94A3B8'}">${a.ratio >= 1 ? Math.round(a.ratio) : a.ratio}%</span>
       <div class="age-bar-fill" style="height:${Math.round((a.ratio / maxAge) * 36)}px;background:${a.ratio === maxAge ? d.color : d.color + '55'}"></div>
       <span class="age-bar-lbl">${a.label.replace('대', '')}</span>
     </div>
@@ -1868,9 +2032,9 @@ function buildOverviewCard(d) {
   // 데이터 출처 표시
   const demoSrcLabel = d.hasDemoData
     ? '<span style="font-size:9px;color:#94A3B8;font-weight:400;margin-left:4px">광고 API</span>'
-    : (isEstimated
-        ? '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">DataLab 추정</span>'
-        : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">추정</span>');
+    : (d.estimated || !d.found
+        ? '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">로보락 인덱스 기반</span>'
+        : '<span style="font-size:9px;color:#F59E0B;font-weight:600;margin-left:4px">로보락 인덱스 기반</span>');
 
   return `
     <div class="kw-card${isEstimated ? ' kw-card-estimated' : (!d.found ? ' kw-card-empty' : '')}">
@@ -1911,16 +2075,19 @@ function buildOverviewCard(d) {
       <div class="kw-mini-charts">
         <div class="mini-chart-box">
           <div class="mini-chart-title">성별 비율 ${demoSrcLabel}</div>
-          <div class="gender-bars">
-            <div class="gender-row">
-              <span class="gender-icon male"><i class="fa-solid fa-mars"></i></span>
-              <div class="gender-bar-wrap"><div class="gender-bar-fill male" style="width:${d.maleRatio}%"></div></div>
-              <span class="gender-pct">${d.maleRatio}%</span>
-            </div>
-            <div class="gender-row">
-              <span class="gender-icon female"><i class="fa-solid fa-venus"></i></span>
-              <div class="gender-bar-wrap"><div class="gender-bar-fill female" style="width:${d.femaleRatio}%"></div></div>
-              <span class="gender-pct">${d.femaleRatio}%</span>
+          <div class="gender-mini-wrap">
+            <canvas class="gender-mini-donut" id="miniDonut_${d.index}" width="56" height="56"></canvas>
+            <div class="gender-bars">
+              <div class="gender-row">
+                <span class="gender-icon male"><i class="fa-solid fa-mars"></i></span>
+                <div class="gender-bar-wrap"><div class="gender-bar-fill male" style="width:${d.maleRatio}%"></div></div>
+                <span class="gender-pct">${d.maleRatio}%</span>
+              </div>
+              <div class="gender-row">
+                <span class="gender-icon female"><i class="fa-solid fa-venus"></i></span>
+                <div class="gender-bar-wrap"><div class="gender-bar-fill female" style="width:${d.femaleRatio}%"></div></div>
+                <span class="gender-pct">${d.femaleRatio}%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1976,7 +2143,7 @@ function renderTargetCharts(d) {
       <p style="font-size:11px;color:#94A3B8;margin-top:2px;margin-bottom:2px;">
         ${d.hasDemoData
           ? '📊 네이버 데이터랩 기준 · 최근 3개월 검색 트렌드 기반 통계 (추정값)'
-          : '⚠️ 데이터 없음 — 검색량 부족으로 기본값(50:50) 표시'}
+          : '🔶 데이터랩 데이터 부족 — 로보락 인덱스 기반 추정값 표시'}
       </p>
       <div class="gender-donut-wrap">
         <canvas id="genderDonut_${d.index}" width="160" height="160"></canvas>
@@ -2004,7 +2171,7 @@ function renderTargetCharts(d) {
       <p style="font-size:11px;color:#94A3B8;margin-top:2px;margin-bottom:2px;">
         ${d.hasDemoData
           ? '📊 네이버 데이터랩 기준 · 최근 3개월 검색 트렌드 기반 통계 (추정값)'
-          : '⚠️ 데이터 없음 — 검색량 부족으로 기본값 표시'}
+          : '🔶 데이터랩 데이터 부족 — 로보락 인덱스 기반 추정값 표시'}
       </p>
       <div class="age-chart-wrap" style="height:200px"><canvas id="ageBar_${d.index}"></canvas></div>
       <div class="insight-box">
@@ -2057,9 +2224,11 @@ function buildDeviceStatBox(label, search, ratio, ctr, clicks, color) {
 }
 
 function renderTrend() {
+  // 기본 검색량 모드이므로 volume notice 표시
+  const vn = document.getElementById('trendVolumeNotice');
+  if (vn) vn.style.display = (trendViewMode === 'volume') ? 'flex' : 'none';
   renderTrendChart(analysisData, trendPeriod, trendDevice);
   renderTrendLegend(analysisData);
-  // 일간 데이터가 이미 로드돼 있으면 즉시 렌더
   if (rawDailyTrendData && rawDailyTrendData.length > 0) {
     renderDailyTrendChart(rawDailyTrendData, trendPeriod);
   }
@@ -2305,7 +2474,22 @@ const RelatedSearch = (function() {
   // ── 상태 ──────────────────────────────────────────────────────────────────
   let _enabled    = false;
   let _lastBaseKw = '';
-  let _data       = [];
+  let _rawData    = [];   // API 원본 전체
+
+  // 정렬 상태
+  let _sortKey = 'relOrder';   // 기본: 연관도순
+  let _sortDir = 'asc';        // asc / desc
+
+  // 필터 상태
+  let _filterComp   = 'all';   // all / low / mid / high
+  let _filterDevice = 'all';   // all / pc / mo
+  let _filterMinVol = 0;
+  let _filterText   = '';
+
+  // 페이지네이션
+  const PAGE_SIZE = 20;
+  const MAX_PAGES = 10;
+  let _currentPage = 1;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
   function dom(id) { return document.getElementById(id); }
@@ -2316,7 +2500,11 @@ const RelatedSearch = (function() {
     const panel = dom('relatedOptionPanel');
     const icon  = dom('relatedToggleIcon');
     if (!btn) return;
-    btn.addEventListener('click', function() {
+    // 패널이 기본 열려있으므로 아이콘도 열린 상태로 초기화
+    if (icon) icon.classList.add('open');
+    btn.addEventListener('click', function(e) {
+      // 스위치 클릭 시 토글 무시
+      if (e.target.closest('.related-option-switch')) return;
       const open = panel.style.display === 'none';
       panel.style.display = open ? 'block' : 'none';
       icon.classList.toggle('open', open);
@@ -2325,14 +2513,96 @@ const RelatedSearch = (function() {
     if (cb) {
       cb.addEventListener('change', function() {
         _enabled = cb.checked;
-        // 분석 데이터가 이미 있으면 즉시 로드/숨기기
         if (_enabled && _lastBaseKw) {
           _fetchAndRender(_lastBaseKw);
         } else if (!_enabled) {
-          dom('relatedResultsSection').style.display = 'none';
+          const sec = dom('relatedResultsSection');
+          if (sec) sec.style.display = 'none';
         }
       });
     }
+  }
+
+  // ── 필터 바 이벤트 초기화 ─────────────────────────────────────────────────
+  function initFilterBar() {
+    const bar = dom('relatedFilterBar');
+    if (!bar) return;
+
+    // 필터 버튼
+    bar.addEventListener('click', function(e) {
+      const btn = e.target.closest('.related-filter-btn');
+      if (!btn) return;
+      const filterType = btn.dataset.filter;
+      const val        = btn.dataset.val;
+
+      // 같은 그룹 active 토글
+      bar.querySelectorAll('.related-filter-btn[data-filter="' + filterType + '"]')
+         .forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      if (filterType === 'comp')   _filterComp   = val;
+      if (filterType === 'device') _filterDevice = val;
+      if (filterType === 'minvol') _filterMinVol = parseInt(val) || 0;
+
+      _currentPage = 1;
+      _applyAndRender();
+    });
+
+    // 텍스트 검색
+    const searchInput = dom('relatedSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        _filterText  = searchInput.value.trim().toLowerCase();
+        _currentPage = 1;
+        _applyAndRender();
+      });
+    }
+  }
+
+  // ── 필터 + 정렬 적용 ──────────────────────────────────────────────────────
+  function _applyAndRender() {
+    // 1) 필터
+    let filtered = _rawData.filter(function(item) {
+      if (_filterComp !== 'all' && item.competition !== _filterComp) return false;
+      if (_filterDevice === 'pc' && item.pcSearch <= item.mobileSearch) return false;
+      if (_filterDevice === 'mo' && item.mobileSearch <= item.pcSearch) return false;
+      if (item.totalSearch < _filterMinVol) return false;
+      if (_filterText && !item.keyword.toLowerCase().includes(_filterText)) return false;
+      return true;
+    });
+
+    // 2) 정렬
+    filtered.sort(function(a, b) {
+      let va = a[_sortKey];
+      let vb = b[_sortKey];
+      if (va === undefined || va === null) va = _sortDir === 'asc' ? Infinity : -Infinity;
+      if (vb === undefined || vb === null) vb = _sortDir === 'asc' ? Infinity : -Infinity;
+      return _sortDir === 'asc' ? va - vb : vb - va;
+    });
+
+    // 3) 페이지 범위 결정
+    const totalFiltered = filtered.length;
+    const maxAllowed    = PAGE_SIZE * MAX_PAGES;
+    const capped        = filtered.slice(0, maxAllowed);
+    const totalPages    = Math.max(1, Math.min(MAX_PAGES, Math.ceil(capped.length / PAGE_SIZE)));
+    if (_currentPage > totalPages) _currentPage = totalPages;
+
+    const start   = (_currentPage - 1) * PAGE_SIZE;
+    const pageData = capped.slice(start, start + PAGE_SIZE);
+
+    // 4) 메타 업데이트
+    const metaEl = dom('relatedResultsMeta');
+    if (metaEl) {
+      const sortLabel = { relOrder:'연관도순', totalSearch:'총검색량순', pcSearch:'PC순', mobileSearch:'모바일순' }[_sortKey] || '';
+      const dirLabel  = _sortDir === 'asc' ? '▲' : '▼';
+      metaEl.textContent = '총 ' + totalFiltered + '개 · ' + sortLabel + ' ' + dirLabel;
+    }
+
+    // 5) 테이블 렌더
+    _renderTable(pageData, capped);
+
+    // 6) 페이지네이션 렌더
+    _renderPagination(totalPages, capped);
   }
 
   // ── API 호출 ──────────────────────────────────────────────────────────────
@@ -2342,87 +2612,154 @@ const RelatedSearch = (function() {
     const list     = dom('relatedList');
     const baseEl   = dom('relatedBaseKw');
     const metaEl   = dom('relatedResultsMeta');
+    const pager    = dom('relatedPagination');
 
     if (!section) return;
     section.style.display = 'block';
     loading.style.display = 'block';
-    list.innerHTML = '';
-    baseEl.textContent  = '"' + baseKw + '" 기준';
-    metaEl.textContent  = '조회 중...';
+    list.innerHTML  = '';
+    if (pager) pager.innerHTML = '';
+    baseEl.textContent = '"' + baseKw + '" 기준';
+    metaEl.textContent = '조회 중...';
 
     try {
-      const json = await ApiClient.fetchRelated(baseKw);
-      _data = json.related || [];
+      const json  = await ApiClient.fetchRelated(baseKw);
+      _rawData    = json.related || [];
       _lastBaseKw = baseKw;
       loading.style.display = 'none';
-      metaEl.textContent = '총 ' + _data.length + '개 · 월간 검색량 내림차순';
-      _render(_data, list);
+
+      // 상태 초기화
+      _sortKey     = 'relOrder';
+      _sortDir     = 'asc';
+      _filterComp  = 'all';
+      _filterDevice= 'all';
+      _filterMinVol= 0;
+      _filterText  = '';
+      _currentPage = 1;
+
+      // 필터 버튼 UI 초기화
+      const bar = dom('relatedFilterBar');
+      if (bar) {
+        bar.querySelectorAll('.related-filter-btn').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.val === 'all' || b.dataset.val === '0');
+        });
+        const si = dom('relatedSearchInput');
+        if (si) si.value = '';
+      }
+
+      _applyAndRender();
     } catch (e) {
       loading.style.display = 'none';
-      list.innerHTML = '<div style="padding:20px;color:#EF4444;font-size:13px;text-align:center"><i class="fa-solid fa-triangle-exclamation"></i> ' + (e.message || '조회 실패') + '</div>';
+      list.innerHTML = '<div style="padding:20px;color:#EF4444;font-size:13px;text-align:center">'
+        + '<i class="fa-solid fa-triangle-exclamation"></i> ' + (e.message || '조회 실패') + '</div>';
     }
   }
 
-  // ── 목록 렌더 ─────────────────────────────────────────────────────────────
-  function _render(data, container) {
-    if (!data.length) {
-      container.innerHTML = '<div style="padding:20px;color:#94A3B8;font-size:13px;text-align:center">연관검색어 데이터가 없습니다.</div>';
+  // ── 테이블 렌더 ───────────────────────────────────────────────────────────
+  function _renderTable(pageData, fullData) {
+    const container = dom('relatedList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!pageData.length) {
+      container.innerHTML = '<div class="related-empty">조건에 맞는 연관검색어가 없습니다.</div>';
       return;
     }
-    const maxVol = data[0].totalSearch || 1;
-    const compBadge = { high: '<span style="color:#EF4444;font-weight:700;font-size:11px">높음</span>',
-                        mid:  '<span style="color:#F59E0B;font-weight:700;font-size:11px">보통</span>',
-                        low:  '<span style="color:#10B981;font-weight:700;font-size:11px">낮음</span>' };
 
-    // 헤더
+    // 바 기준: 전체(필터된) 데이터의 최대값
+    const maxVol = fullData.length ? Math.max(...fullData.map(function(d){ return d.totalSearch; })) || 1 : 1;
+
+    // 헤더 행
+    const sortableCols = [
+      { key: 'totalSearch', label: '총 검색량' },
+      { key: 'pcSearch',    label: 'PC'       },
+      { key: 'mobileSearch',label: '모바일'   },
+    ];
     const header = document.createElement('div');
     header.className = 'related-row related-header';
-    header.innerHTML = '<span>#</span><span>키워드</span><span style="text-align:right">월간 검색량</span><span style="text-align:right">PC</span><span style="text-align:right">모바일</span><span style="text-align:center">경쟁도</span>';
+
+    // 순위 열 헤더 (연관도 정렬 토글)
+    const relOrderBtn = document.createElement('span');
+    relOrderBtn.className = 'related-col-sort' + (_sortKey === 'relOrder' ? ' active' + (_sortDir === 'asc' ? ' asc' : '') : '');
+    relOrderBtn.innerHTML = '# <i class="fa-solid fa-arrow-up sort-arrow"></i>';
+    relOrderBtn.title = '연관도순으로 정렬';
+    relOrderBtn.addEventListener('click', function() { _onSortClick('relOrder'); });
+    header.appendChild(relOrderBtn);
+
+    // 키워드 열 헤더 (고정)
+    const kwHeader = document.createElement('span');
+    kwHeader.textContent = '키워드';
+    header.appendChild(kwHeader);
+
+    // 검색량 3개 정렬 가능 헤더
+    sortableCols.forEach(function(col) {
+      const span = document.createElement('span');
+      span.style.textAlign = 'right';
+      span.className = 'related-col-sort' + (_sortKey === col.key ? ' active' + (_sortDir === 'asc' ? ' asc' : '') : '');
+      span.innerHTML = col.label + ' <i class="fa-solid fa-arrow-down sort-arrow"></i>';
+      span.addEventListener('click', function() { _onSortClick(col.key); });
+      header.appendChild(span);
+    });
+
+    // 경쟁도 헤더
+    const compHeader = document.createElement('span');
+    compHeader.style.textAlign = 'center';
+    compHeader.textContent = '경쟁도';
+    header.appendChild(compHeader);
+
     container.appendChild(header);
 
-    // 행
-    data.forEach(function(item, idx) {
+    // 데이터 행
+    pageData.forEach(function(item, idxInPage) {
+      const globalRank = item.relOrder + 1;  // 원래 연관도 순위
       const pct  = maxVol > 0 ? Math.round((item.totalSearch / maxVol) * 100) : 0;
       const row  = document.createElement('div');
       row.className = 'related-row';
 
       // 순위
       const rankEl = document.createElement('span');
-      rankEl.className = 'related-rank' + (idx < 3 ? ' top3' : '');
-      rankEl.textContent = idx + 1;
+      rankEl.className = 'related-rank' + (item.relOrder < 3 ? ' top3' : '');
+      rankEl.textContent = globalRank;
 
-      // 키워드 (클릭 시 입력창에 추가)
-      const kwEl  = document.createElement('span');
+      // 키워드
+      const kwEl = document.createElement('span');
       kwEl.className = 'related-kw';
       kwEl.textContent = item.keyword;
       kwEl.title = '클릭하여 분석 키워드에 추가';
       kwEl.addEventListener('click', function() {
-        if (typeof addKeyword === 'function') {
-          addKeyword(item.keyword);
-        }
+        if (typeof addKeyword === 'function') addKeyword(item.keyword);
       });
 
-      // 검색량 + 인라인 바
-      const volWrap = document.createElement('div');
-      volWrap.className = 'related-vol-bar';
-      volWrap.innerHTML = '<div class="related-vol-bar-bg"><div class="related-vol-bar-fill" style="width:' + pct + '%"></div></div>'
-        + '<span class="related-vol-num">' + _fmt(item.totalSearch) + '</span>';
+      // 총 검색량 셀 (바 포함)
+      const volCell = document.createElement('div');
+      volCell.className = 'related-vol-cell';
+      volCell.innerHTML =
+        '<div class="related-vol-top">'
+        + '<div class="related-vol-bar-bg"><div class="related-vol-bar-fill" style="width:' + pct + '%"></div></div>'
+        + '<span class="related-vol-num">' + _fmt(item.totalSearch) + '</span>'
+        + '</div>';
 
-      const pcEl   = document.createElement('span');
-      pcEl.className = 'related-pc';
+      // PC
+      const pcEl = document.createElement('span');
+      pcEl.className = 'related-sub-num';
       pcEl.textContent = _fmt(item.pcSearch);
 
-      const moEl   = document.createElement('span');
-      moEl.className = 'related-mo';
+      // 모바일
+      const moEl = document.createElement('span');
+      moEl.className = 'related-sub-num';
       moEl.textContent = _fmt(item.mobileSearch);
 
+      // 경쟁도
       const compEl = document.createElement('span');
       compEl.className = 'related-comp';
-      compEl.innerHTML = compBadge[item.competition] || '-';
+      const compMap = { high: 'high', mid: 'mid', low: 'low' };
+      const compLbl = { high: '높음', mid: '보통', low: '낮음' };
+      const cKey = compMap[item.competition] || 'low';
+      compEl.innerHTML = '<span class="comp-chip ' + cKey + '">' + (compLbl[cKey] || '-') + '</span>';
 
       row.appendChild(rankEl);
       row.appendChild(kwEl);
-      row.appendChild(volWrap);
+      row.appendChild(volCell);
       row.appendChild(pcEl);
       row.appendChild(moEl);
       row.appendChild(compEl);
@@ -2430,6 +2767,79 @@ const RelatedSearch = (function() {
     });
   }
 
+  // ── 정렬 클릭 핸들러 ──────────────────────────────────────────────────────
+  function _onSortClick(key) {
+    if (_sortKey === key) {
+      _sortDir = _sortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      _sortKey = key;
+      // 연관도는 기본 asc(낮을수록 연관도 높음), 검색량은 기본 desc
+      _sortDir = (key === 'relOrder') ? 'asc' : 'desc';
+    }
+    _currentPage = 1;
+    _applyAndRender();
+  }
+
+  // ── 페이지네이션 렌더 ─────────────────────────────────────────────────────
+  function _renderPagination(totalPages, fullData) {
+    const pager = dom('relatedPagination');
+    if (!pager) return;
+    pager.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    function makePagerBtn(label, page, isActive, isDisabled) {
+      const btn = document.createElement('button');
+      btn.className = 'rel-page-btn' + (isActive ? ' active' : '');
+      btn.disabled  = isDisabled;
+      btn.innerHTML = label;
+      if (!isDisabled && !isActive) {
+        btn.addEventListener('click', function() {
+          _currentPage = page;
+          _applyAndRender();
+          // 테이블 상단으로 스크롤
+          const sec = dom('relatedResultsSection');
+          if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+      return btn;
+    }
+
+    // 이전
+    pager.appendChild(makePagerBtn('<i class="fa-solid fa-chevron-left"></i>', _currentPage - 1, false, _currentPage === 1));
+
+    // 페이지 번호 (최대 5개 표시)
+    const half  = 2;
+    let startP  = Math.max(1, _currentPage - half);
+    let endP    = Math.min(totalPages, startP + 4);
+    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+    if (startP > 1) {
+      pager.appendChild(makePagerBtn('1', 1, false, false));
+      if (startP > 2) {
+        const dots = document.createElement('span');
+        dots.textContent = '…';
+        dots.style.cssText = 'color:var(--text-muted);padding:0 2px;font-size:13px;';
+        pager.appendChild(dots);
+      }
+    }
+    for (let p = startP; p <= endP; p++) {
+      pager.appendChild(makePagerBtn(p, p, p === _currentPage, false));
+    }
+    if (endP < totalPages) {
+      if (endP < totalPages - 1) {
+        const dots = document.createElement('span');
+        dots.textContent = '…';
+        dots.style.cssText = 'color:var(--text-muted);padding:0 2px;font-size:13px;';
+        pager.appendChild(dots);
+      }
+      pager.appendChild(makePagerBtn(totalPages, totalPages, false, false));
+    }
+
+    // 다음
+    pager.appendChild(makePagerBtn('<i class="fa-solid fa-chevron-right"></i>', _currentPage + 1, false, _currentPage === totalPages));
+  }
+
+  // ── 포맷 헬퍼 ────────────────────────────────────────────────────────────
   function _fmt(n) {
     if (!n && n !== 0) return '-';
     if (n >= 10000) return (n / 10000).toFixed(1) + '만';
@@ -2443,7 +2853,10 @@ const RelatedSearch = (function() {
     _fetchAndRender(baseKw);
   }
 
-  function init() { initToggle(); }
+  function init() {
+    initToggle();
+    initFilterBar();
+  }
 
   return { init, onAnalysisDone };
 })();
