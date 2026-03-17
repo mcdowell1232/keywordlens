@@ -1929,6 +1929,7 @@ function renderDailyTrendChart(dailyResults, period) {
   const totalPts = filteredResults[0].data.length;
   const tickStep = totalPts > 270 ? 30 : totalPts > 150 ? 14 : totalPts > 60 ? 7 : 3;
 
+  
   dailyChartInstance = new Chart(canvas, {
     type: 'line',
     data: { labels, datasets },
