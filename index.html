@@ -796,10 +796,11 @@ const ApiClient = (() => {
   }
   async function fetchKeywordData(keywords) {
     // /keyword 엔드포인트가 내부적으로
-    // SearchAd(검색량/CTR) + DataLab(성비/연령비) 를 모두 처리
-    // 키워드 수에 따라 동적 timeout 산출 (청크당 4개, 9콜, 1초 갭)
+    // SearchAd(검색량/CTR) + DataLab 통합 배치(검색량역산+성비+연령비) 를 모두 처리
+    // 청크당 12콜 병렬 (all/pc/mo + gender_m/f + age×7), 청크간 1.2초 대기
+    // 1~4개 → 1배치(~8초), 5~8개 → 2배치(~18초), 9~10개 → 3배치(~28초)
     const chunks  = Math.ceil(keywords.length / 4);
-    const timeout = chunks * 8000 + 12000; // 1~4개=20초, 5~8개=28초, 9~10개=36초
+    const timeout = chunks * 10000 + 10000; // 여유있게: 1배치=20초, 2배치=30초, 3배치=40초
     const data = await apiFetch('/keyword', { method: 'POST', body: JSON.stringify({ keywords }) }, timeout);
     return data.keywords || [];
   }
@@ -1296,43 +1297,49 @@ async function runAnalysis() {
 
 async function runRealAnalysis() {
   resetBatchUI();
-  updateLoadingStatus('키워드 데이터 조회 중...');
 
-  // ── Step 1: /keyword 호출 (검색량 + CTR/클릭/경쟁도 + 성비/연령비 DataLab 역산 포함) ──
-  // Worker가 내부적으로 calcDemographic까지 수행하여 maleRatio/ageRatio를 함께 반환
+  // ── /keyword 호출: SearchAd + DataLab 통합 (검색량 + 성비/연령비 1패스) ──
+  // 청크당 12콜 병렬 (all/pc/mo + gender_m/f + age×7), 청크간 1.2초 대기
+  // 예상 소요: 1배치(1~4개)≈8초, 2배치(5~8개)≈18초, 3배치(9~10개)≈28초
   const { chunks: totalBatches, totalCalls } = calcDemoBatches(keywords.length);
-  const waitSec = 1;
-  const waitTotal = (totalBatches - 1) * waitSec;
-  const etaMsg = totalBatches > 1
-    ? `키워드 + 성별/연령 분석 중... (배치 ${totalBatches}개 · 약 ${waitTotal + 5}초 소요)`
-    : '키워드 + 성별/연령 분석 중...';
+  const waitSec    = 1.2;
+  const estSec     = Math.round(totalBatches * 8 + (totalBatches - 1) * waitSec);
+  const etaMsg     = `키워드 + 성별/연령 분석 중... (약 ${estSec}초 소요)`;
   updateLoadingStatus(etaMsg);
   updateBatchProgress(1, totalBatches, 0, totalCalls);
 
-  // 배치 진행 UI 타이머
+  // 진행 바 UI 타이머 (실제 API 응답 중 시각적 피드백)
   let progressTimer = null;
-  if (totalBatches > 1) {
+  {
     let fakeCall = 0;
+    // 12콜 × (실제 API 응답시간 ≈ 500ms/콜) → 청크당 약 700ms 간격
+    const intervalMs = Math.round((estSec * 1000) / totalCalls);
     progressTimer = setInterval(function() {
-      fakeCall = Math.min(fakeCall + 1, totalCalls);
-      const currentBatch = Math.min(Math.ceil(fakeCall / 9), totalBatches);
+      fakeCall = Math.min(fakeCall + 1, totalCalls - 1); // 완료 직전까지만
+      const currentBatch = Math.min(Math.floor(fakeCall / 12) + 1, totalBatches);
       updateBatchProgress(currentBatch, totalBatches, fakeCall, totalCalls);
-      if (fakeCall === 9 && totalBatches >= 2) {
+      // 첫 배치 완료 지점 → 카운트다운 표시
+      if (fakeCall === 12 && totalBatches >= 2) {
         clearInterval(progressTimer);
-        demoCountdown(waitSec, 1, totalBatches).then(function() {
-          updateBatchProgress(2, totalBatches, 9, totalCalls);
+        demoCountdown(Math.ceil(waitSec), 1, totalBatches).then(function() {
+          let fakeCall2 = 12;
+          progressTimer = setInterval(function() {
+            fakeCall2 = Math.min(fakeCall2 + 1, totalCalls - 1);
+            const b2 = Math.min(Math.floor(fakeCall2 / 12) + 1, totalBatches);
+            updateBatchProgress(b2, totalBatches, fakeCall2, totalCalls);
+          }, intervalMs);
         });
       }
-    }, 400);
+    }, intervalMs);
   }
 
   const kwResults = await ApiClient.fetchKeywordData(keywords);
   if (progressTimer) clearInterval(progressTimer);
   updateBatchProgress(totalBatches, totalBatches, totalCalls, totalCalls);
-  await sleep(300);
+  await sleep(200);
   resetBatchUI();
 
-  // ── Step 2: /trend 호출 (트렌드 데이터) ─────────────────────────────────
+  // ── /trend 호출 (트렌드 데이터) ─────────────────────────────────────────
   updateLoadingStatus('트렌드 분석 중...');
   let trendResults = [];
   try {
@@ -1341,7 +1348,7 @@ async function runRealAnalysis() {
     console.warn('[trend] 실패, 빈 트렌드로 진행:', e.message);
   }
 
-  // ── Step 3: 결과 병합 (/demographic 별도 호출 없음, kwResults에 성비/연령비 포함) ──
+  // ── 결과 병합 (kwResults에 성비/연령비 포함) ──────────────────────────────
   updateLoadingStatus('결과 처리 중...');
   analysisData = mergeApiResults(kwResults, trendResults, {}, keywords);
   rawTrendData = trendResults;
@@ -1439,8 +1446,10 @@ function getDefaultAgeRatio() {
 // 키워드 수에 따라 예상 배치/총 호출 수를 계산하고
 // 배치 간 대기 시간을 카운트다운 UI로 표시
 function calcDemoBatches(kwCount) {
-  const chunks = Math.ceil(kwCount / 4); // 인덱스 역산: 청크당 4개 (로보락 포함 5개)
-  const totalCalls = chunks * 9; // 배치당 9회 (남성+여성+연령7)
+  // 통합 배치: 청크당 4개 키워드, 12콜 병렬 (all/pc/mo + gender_m/f + age×7)
+  // 청크간 1.2초 대기
+  const chunks     = Math.ceil(kwCount / 4);
+  const totalCalls = chunks * 12;
   return { chunks, totalCalls };
 }
 
