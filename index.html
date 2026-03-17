@@ -1122,7 +1122,10 @@ const ApiClient = (() => {
     return parseTrendResponse(data, keywords, true); // isDaily = true
   }
   async function healthCheck() { return apiFetch('/health'); }
-  return { fetchKeywordData, fetchDemographicData, fetchTrendData, fetchDailyTrendData, healthCheck, getPeriodDates, formatDate };
+  async function fetchRelated(keyword) {
+    return apiFetch('/related', { method: 'POST', body: JSON.stringify({ keyword }) }, 15000);
+  }
+  return { fetchKeywordData, fetchDemographicData, fetchTrendData, fetchDailyTrendData, healthCheck, fetchRelated, getPeriodDates, formatDate };
 })();
 
 // ── 로보락 인덱스 배너 ─────────────────────────────────────────────────────
@@ -2347,21 +2350,8 @@ const RelatedSearch = (function() {
     baseEl.textContent  = '"' + baseKw + '" 기준';
     metaEl.textContent  = '조회 중...';
 
-    const workerUrl = localStorage.getItem('kl_workerUrl') || '';
-    if (!workerUrl) {
-      loading.style.display = 'none';
-      list.innerHTML = '<div style="padding:20px;color:#94A3B8;font-size:13px;text-align:center"><i class="fa-solid fa-triangle-exclamation"></i> Worker URL을 먼저 설정해 주세요.</div>';
-      return;
-    }
-
     try {
-      const res  = await fetch(workerUrl + '/related', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: baseKw }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'API 오류');
+      const json = await ApiClient.fetchRelated(baseKw);
       _data = json.related || [];
       _lastBaseKw = baseKw;
       loading.style.display = 'none';
