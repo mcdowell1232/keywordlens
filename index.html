@@ -421,6 +421,229 @@ body {
 .ib-needs-update .index-banner-label { color: #fbbf24; }
 .ib-needs-update .ib-dot { background: #fbbf24; }
 
+/* ════════════════════════════════════════════════════
+   연관검색어 퀵조회 — 옵션바 (입력창 하단)
+════════════════════════════════════════════════════ */
+.related-option-bar {
+  margin-top: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+.related-option-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: inherit;
+  transition: background .15s, color .15s;
+}
+.related-option-toggle:hover { background: var(--surface-2); color: #6366F1; }
+.related-option-toggle i:first-child { color: #6366F1; font-size: 14px; }
+.related-toggle-icon { margin-left: auto; font-size: 11px; transition: transform .2s; }
+.related-toggle-icon.open { transform: rotate(180deg); }
+.related-option-panel {
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border);
+  background: #f8faff;
+}
+.related-option-desc {
+  display: flex;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.related-option-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.related-option-switch input { display: none; }
+.related-switch-slider {
+  width: 40px; height: 22px;
+  background: #CBD5E1;
+  border-radius: 11px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.related-switch-slider::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.related-option-switch input:checked + .related-switch-slider { background: #6366F1; }
+.related-option-switch input:checked + .related-switch-slider::after { transform: translateX(18px); }
+.related-switch-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+/* ════════════════════════════════════════════════════
+   연관검색어 퀵조회 — 결과 섹션 (개요탭 하단)
+════════════════════════════════════════════════════ */
+.related-results-section {
+  margin-top: 32px;
+  border-top: 2px solid var(--border);
+  padding-top: 24px;
+}
+.related-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.related-results-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.related-base-kw {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6366F1;
+  background: #EEF2FF;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.related-results-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.related-loading {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.related-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.related-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 100px 80px 80px 90px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  transition: background .12s;
+}
+.related-row:hover { background: var(--surface-2); }
+.related-row.related-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  background: var(--surface-2);
+  border-radius: 8px 8px 0 0;
+  padding: 8px 14px;
+  border-bottom: 2px solid var(--border);
+}
+.related-rank {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+.related-rank.top3 { color: #F59E0B; }
+.related-kw {
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: color .15s;
+}
+.related-kw:hover { color: #6366F1; text-decoration: underline; }
+.related-total { font-weight: 700; color: var(--text-primary); text-align: right; }
+.related-pc, .related-mo { text-align: right; color: var(--text-secondary); }
+.related-comp { text-align: center; }
+.related-bar-wrap {
+  grid-column: 1 / -1;
+  padding: 0 14px 8px;
+  display: none;
+}
+.related-bar-bg {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.related-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366F1, #8B5CF6);
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+/* 검색량 인라인 바 */
+.related-vol-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.related-vol-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+.related-vol-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366F1 0%, #A78BFA 100%);
+  border-radius: 3px;
+  transition: width .5s ease;
+}
+.related-vol-num {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 13px;
+  min-width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.related-add-btn {
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  color: #6366F1;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.related-add-btn:hover { background: #6366F1; color: #fff; border-color: #6366F1; }
+.related-add-btn:disabled { background: #f1f5f9; color: #94A3B8; border-color: #e2e8f0; cursor: not-allowed; }
+@media (max-width: 600px) {
+  .related-row { grid-template-columns: 24px 1fr 90px 70px; }
+  .related-row .related-pc { display: none; }
+  .related-row .related-comp { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -460,12 +683,12 @@ body {
     <section class="search-panel">
       <div class="search-panel-header">
         <h2 class="section-title">키워드 입력</h2>
-        <span class="keyword-counter"><span id="kwCount">0</span> / 10</span>
+        <span class="keyword-counter"><span id="kwCount">0</span> / 6</span>
       </div>
       <div class="keyword-input-area" id="keywordInputArea">
         <div class="keyword-tags" id="keywordTags"></div>
         <input type="text" class="keyword-input" id="keywordInput"
-          placeholder="키워드 입력 후 Enter 또는 쉼표로 추가 (최대 10개)" autocomplete="off" />
+          placeholder="키워드 입력 후 Enter 또는 쉼표로 추가 (최대 6개)" autocomplete="off" />
       </div>
       <div class="search-actions">
         <button class="btn-clear" id="btnClear"><i class="fa-solid fa-xmark"></i> 초기화</button>
@@ -480,6 +703,26 @@ body {
         <button class="suggestion-chip" data-kw="맛집">맛집</button>
         <button class="suggestion-chip" data-kw="노트북">노트북</button>
         <button class="suggestion-chip" data-kw="헬스">헬스</button>
+      </div>
+
+      <!-- ★ 추가 옵션: 연관검색어 퀵조회 -->
+      <div class="related-option-bar" id="relatedOptionBar">
+        <button class="related-option-toggle" id="relatedOptionToggle">
+          <i class="fa-solid fa-magnifying-glass-plus"></i>
+          <span>연관검색어 퀵조회</span>
+          <i class="fa-solid fa-chevron-down related-toggle-icon" id="relatedToggleIcon"></i>
+        </button>
+        <div class="related-option-panel" id="relatedOptionPanel" style="display:none">
+          <div class="related-option-desc">
+            <i class="fa-solid fa-circle-info" style="color:#6366F1"></i>
+            <span>입력창의 <strong>첫 번째 키워드</strong>를 기준으로 네이버 연관검색어의 월간 검색량을 조회합니다.<br>분석 시작 후 <strong>키워드 개요</strong> 탭 하단에서 결과를 확인하세요.</span>
+          </div>
+          <label class="related-option-switch">
+            <input type="checkbox" id="relatedOptionEnabled">
+            <span class="related-switch-slider"></span>
+            <span class="related-switch-label">연관검색어 퀵조회 활성화</span>
+          </label>
+        </div>
       </div>
     </section>
 
@@ -522,6 +765,21 @@ body {
       </div>
       <div class="tab-content active" id="tab-overview">
         <div class="overview-grid" id="overviewGrid"></div>
+        <!-- ★ 연관검색어 퀵조회 결과 섹션 -->
+        <div class="related-results-section" id="relatedResultsSection" style="display:none">
+          <div class="related-results-header">
+            <div class="related-results-title">
+              <i class="fa-solid fa-magnifying-glass-plus" style="color:#6366F1"></i>
+              <span>연관검색어 퀵조회</span>
+              <span class="related-base-kw" id="relatedBaseKw"></span>
+            </div>
+            <div class="related-results-meta" id="relatedResultsMeta"></div>
+          </div>
+          <div class="related-loading" id="relatedLoading" style="display:none">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> 연관검색어 조회 중...
+          </div>
+          <div class="related-list" id="relatedList"></div>
+        </div>
       </div>
       <div class="tab-content" id="tab-target">
         <div class="target-keyword-nav" id="targetKeywordNav"></div>
@@ -612,7 +870,7 @@ body {
     <div class="empty-state" id="emptyState">
       <div class="empty-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
       <h3>키워드를 입력하고 분석을 시작하세요</h3>
-      <p>최대 10개의 키워드를 입력하여<br/>광고주 관점의 상세 데이터를 확인할 수 있습니다.</p>
+      <p>최대 6개의 키워드를 입력하여<br/>광고주 관점의 상세 데이터를 확인할 수 있습니다.</p>
     </div>
   </main>
 
@@ -1230,7 +1488,7 @@ const modalSave      = document.getElementById('modalSave');
 function addKeyword(kw) {
   kw = kw.trim().replace(/[,，]/g, '');
   if (!kw) return;
-  if (keywords.length >= 10) { showToast('키워드는 최대 10개까지 입력할 수 있습니다.', 'error'); return; }
+  if (keywords.length >= 6) { showToast('키워드는 최대 6개까지 입력할 수 있습니다.', 'error'); return; }
   if (keywords.includes(kw)) { showToast(`'${kw}'은(는) 이미 추가된 키워드입니다.`, 'error'); return; }
   keywords.push(kw);
   renderTags();
@@ -1546,6 +1804,8 @@ function renderResults() {
   renderTrend();
   renderEfficiency();
   switchTab('overview');
+  // ★ 연관검색어 퀵조회: 첫 번째 키워드 기준으로 자동 조회 (활성화된 경우)
+  if (keywords.length > 0) RelatedSearch.onAnalysisDone(keywords[0]);
 }
 
 function updateModeBadge() {
@@ -2034,9 +2294,175 @@ function renderDailyTrendChart(dailyResults, period) {
 
 
 // 트렌드 뷰 토글 (비율 ↔ 검색량) — 월간 + 일간 동시 업데이트
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ★ 연관검색어 퀵조회 모듈 (신규)
+// ════════════════════════════════════════════════════════════════════════════
+const RelatedSearch = (function() {
+  // ── 상태 ──────────────────────────────────────────────────────────────────
+  let _enabled    = false;
+  let _lastBaseKw = '';
+  let _data       = [];
+
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  function dom(id) { return document.getElementById(id); }
+
+  // ── 옵션바 토글 ───────────────────────────────────────────────────────────
+  function initToggle() {
+    const btn   = dom('relatedOptionToggle');
+    const panel = dom('relatedOptionPanel');
+    const icon  = dom('relatedToggleIcon');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      const open = panel.style.display === 'none';
+      panel.style.display = open ? 'block' : 'none';
+      icon.classList.toggle('open', open);
+    });
+    const cb = dom('relatedOptionEnabled');
+    if (cb) {
+      cb.addEventListener('change', function() {
+        _enabled = cb.checked;
+        // 분석 데이터가 이미 있으면 즉시 로드/숨기기
+        if (_enabled && _lastBaseKw) {
+          _fetchAndRender(_lastBaseKw);
+        } else if (!_enabled) {
+          dom('relatedResultsSection').style.display = 'none';
+        }
+      });
+    }
+  }
+
+  // ── API 호출 ──────────────────────────────────────────────────────────────
+  async function _fetchAndRender(baseKw) {
+    const section  = dom('relatedResultsSection');
+    const loading  = dom('relatedLoading');
+    const list     = dom('relatedList');
+    const baseEl   = dom('relatedBaseKw');
+    const metaEl   = dom('relatedResultsMeta');
+
+    if (!section) return;
+    section.style.display = 'block';
+    loading.style.display = 'block';
+    list.innerHTML = '';
+    baseEl.textContent  = '"' + baseKw + '" 기준';
+    metaEl.textContent  = '조회 중...';
+
+    const workerUrl = localStorage.getItem('kl_workerUrl') || '';
+    if (!workerUrl) {
+      loading.style.display = 'none';
+      list.innerHTML = '<div style="padding:20px;color:#94A3B8;font-size:13px;text-align:center"><i class="fa-solid fa-triangle-exclamation"></i> Worker URL을 먼저 설정해 주세요.</div>';
+      return;
+    }
+
+    try {
+      const res  = await fetch(workerUrl + '/related', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword: baseKw }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'API 오류');
+      _data = json.related || [];
+      _lastBaseKw = baseKw;
+      loading.style.display = 'none';
+      metaEl.textContent = '총 ' + _data.length + '개 · 월간 검색량 내림차순';
+      _render(_data, list);
+    } catch (e) {
+      loading.style.display = 'none';
+      list.innerHTML = '<div style="padding:20px;color:#EF4444;font-size:13px;text-align:center"><i class="fa-solid fa-triangle-exclamation"></i> ' + (e.message || '조회 실패') + '</div>';
+    }
+  }
+
+  // ── 목록 렌더 ─────────────────────────────────────────────────────────────
+  function _render(data, container) {
+    if (!data.length) {
+      container.innerHTML = '<div style="padding:20px;color:#94A3B8;font-size:13px;text-align:center">연관검색어 데이터가 없습니다.</div>';
+      return;
+    }
+    const maxVol = data[0].totalSearch || 1;
+    const compBadge = { high: '<span style="color:#EF4444;font-weight:700;font-size:11px">높음</span>',
+                        mid:  '<span style="color:#F59E0B;font-weight:700;font-size:11px">보통</span>',
+                        low:  '<span style="color:#10B981;font-weight:700;font-size:11px">낮음</span>' };
+
+    // 헤더
+    const header = document.createElement('div');
+    header.className = 'related-row related-header';
+    header.innerHTML = '<span>#</span><span>키워드</span><span style="text-align:right">월간 검색량</span><span style="text-align:right">PC</span><span style="text-align:right">모바일</span><span style="text-align:center">경쟁도</span>';
+    container.appendChild(header);
+
+    // 행
+    data.forEach(function(item, idx) {
+      const pct  = maxVol > 0 ? Math.round((item.totalSearch / maxVol) * 100) : 0;
+      const row  = document.createElement('div');
+      row.className = 'related-row';
+
+      // 순위
+      const rankEl = document.createElement('span');
+      rankEl.className = 'related-rank' + (idx < 3 ? ' top3' : '');
+      rankEl.textContent = idx + 1;
+
+      // 키워드 (클릭 시 입력창에 추가)
+      const kwEl  = document.createElement('span');
+      kwEl.className = 'related-kw';
+      kwEl.textContent = item.keyword;
+      kwEl.title = '클릭하여 분석 키워드에 추가';
+      kwEl.addEventListener('click', function() {
+        if (typeof addKeyword === 'function') {
+          addKeyword(item.keyword);
+        }
+      });
+
+      // 검색량 + 인라인 바
+      const volWrap = document.createElement('div');
+      volWrap.className = 'related-vol-bar';
+      volWrap.innerHTML = '<div class="related-vol-bar-bg"><div class="related-vol-bar-fill" style="width:' + pct + '%"></div></div>'
+        + '<span class="related-vol-num">' + _fmt(item.totalSearch) + '</span>';
+
+      const pcEl   = document.createElement('span');
+      pcEl.className = 'related-pc';
+      pcEl.textContent = _fmt(item.pcSearch);
+
+      const moEl   = document.createElement('span');
+      moEl.className = 'related-mo';
+      moEl.textContent = _fmt(item.mobileSearch);
+
+      const compEl = document.createElement('span');
+      compEl.className = 'related-comp';
+      compEl.innerHTML = compBadge[item.competition] || '-';
+
+      row.appendChild(rankEl);
+      row.appendChild(kwEl);
+      row.appendChild(volWrap);
+      row.appendChild(pcEl);
+      row.appendChild(moEl);
+      row.appendChild(compEl);
+      container.appendChild(row);
+    });
+  }
+
+  function _fmt(n) {
+    if (!n && n !== 0) return '-';
+    if (n >= 10000) return (n / 10000).toFixed(1) + '만';
+    return n.toLocaleString('ko-KR');
+  }
+
+  // ── 공개 API ──────────────────────────────────────────────────────────────
+  function onAnalysisDone(baseKw) {
+    if (!_enabled || !baseKw) return;
+    _lastBaseKw = baseKw;
+    _fetchAndRender(baseKw);
+  }
+
+  function init() { initToggle(); }
+
+  return { init, onAnalysisDone };
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   // 인덱스 배너 자동 로드
   IndexBanner.load();
+  // ★ 연관검색어 퀵조회 초기화
+  RelatedSearch.init();
   document.getElementById('trendViewToggle')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
