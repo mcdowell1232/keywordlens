@@ -331,9 +331,107 @@ body {
   .kw-stats-main { grid-template-columns: 1fr; }
   .ctr-badges { flex-direction: column; }
 }
+/* ── 로보락 인덱스 띠배너 ─────────────────────────────────────────────────── */
+.index-banner {
+  width: 100%;
+  background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+  border-bottom: 1px solid #334155;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 36px;
+  font-size: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.index-banner-label {
+  color: #4ade80;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.index-banner-label .ib-dot {
+  width: 6px; height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: ibPulse 2s infinite;
+}
+@keyframes ibPulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.7); }
+}
+.index-banner-content {
+  flex: 1;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.ib-month  { color: #7dd3fc; font-weight: 600; }
+.ib-sep    { color: #334155; margin: 0 4px; }
+.ib-key    { color: #94a3b8; }
+.ib-val    { color: #f1f5f9; font-weight: 700; }
+.ib-warn   { color: #fbbf24; font-size: 11px; margin-left: 6px; }
+.index-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.btn-index-refresh {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-index-refresh:hover  { background: #334155; color: #f1f5f9; border-color: #64748b; }
+.btn-index-refresh:disabled { opacity: .5; cursor: not-allowed; }
+.btn-index-refresh.refreshing { color: #4ade80; border-color: #4ade80; }
+.ib-spin {
+  display: inline-block; width: 10px; height: 10px;
+  border: 2px solid #4ade80; border-top-color: transparent;
+  border-radius: 50%; animation: ibSpin .6s linear infinite;
+}
+@keyframes ibSpin { to { transform: rotate(360deg); } }
+.ib-needs-update { background: linear-gradient(90deg, #1c0a00 0%, #1e293b 100%); border-bottom-color: #f59e0b; }
+.ib-needs-update .index-banner-label { color: #fbbf24; }
+.ib-needs-update .ib-dot { background: #fbbf24; }
+
 </style>
 </head>
 <body>
+  <!-- 로보락 인덱스 띠배너 -->
+  <div class="index-banner" id="indexBanner">
+    <div class="index-banner-label">
+      <span class="ib-dot"></span>
+      로보락 인덱스
+    </div>
+    <div class="index-banner-content" id="indexBannerContent">
+      <span style="color:#475569;">로딩 중...</span>
+    </div>
+    <div class="index-banner-actions">
+      <button class="btn-index-refresh" id="btnIndexRefresh" onclick="manualRefreshIndex()">
+        <i class="fa-solid fa-rotate-right"></i> 최신화
+      </button>
+    </div>
+  </div>
+
   <header class="header">
     <div class="header-inner">
       <div class="logo">
@@ -725,9 +823,10 @@ const ApiClient = (() => {
   async function fetchDemographicData(keywords, period = 3) {
     const { startDate, endDate } = getPeriodDates(period);
     // 키워드 수에 따라 timeout 동적 산출
-    // 배치당 ~3초(API 응답) + 배치간 1초 대기 + 여유 5초
-    const chunks  = Math.ceil(keywords.length / 5);
-    const timeout = chunks * 4000 + 5000; // 1~5개=9초, 6~10개=13초
+    // 인덱스 역산 방식: 청크당 4개 (로보락 포함 5개) + 9회 API + 1초 갭
+    // 배치당 ~4초(API 응답) + 배치간 1초 대기 + 여유 6초
+    const chunks  = Math.ceil(keywords.length / 4); // 1~4개=1배치, 5~8개=2배치, 9~10개=3배치
+    const timeout = chunks * 5000 + 6000; // 1~4개=11초, 5~8개=16초, 9~10개=21초
     const data = await apiFetch('/demographic', {
       method: 'POST',
       body: JSON.stringify({ keywords, startDate, endDate }),
@@ -753,6 +852,129 @@ const ApiClient = (() => {
   async function healthCheck() { return apiFetch('/health'); }
   return { fetchKeywordData, fetchDemographicData, fetchTrendData, fetchDailyTrendData, healthCheck, getPeriodDates, formatDate };
 })();
+
+// ── 로보락 인덱스 배너 ─────────────────────────────────────────────────────
+const IndexBanner = (function() {
+  // 기본값 (Worker KV 미연결 시 fallback 표시용)
+  const DEFAULT = {
+    month: '2026-02',
+    maleRatio: 43, femaleRatio: 57,
+    ageRatio: [
+      { label: '~12', ratio: 0.03 }, { label: '13~19', ratio: 0.44 },
+      { label: '20~24', ratio: 1.40 }, { label: '25~29', ratio: 8.75 },
+      { label: '30~39', ratio: 40.97 }, { label: '40~49', ratio: 32.27 },
+      { label: '50~', ratio: 16.14 },
+    ],
+    source: 'default',
+  };
+
+  let currentIndex = null;
+
+  // 연월 표시 변환 (2026-02 → 2026년 2월)
+  function fmtMonth(m) {
+    if (!m) return '-';
+    const [y, mo] = m.split('-');
+    return y + '년 ' + parseInt(mo) + '월';
+  }
+
+  // 상위 3개 연령대 추출
+  function topAges(ageRatio, n) {
+    if (!Array.isArray(ageRatio)) return '';
+    return [...ageRatio]
+      .sort(function(a,b) { return b.ratio - a.ratio; })
+      .slice(0, n)
+      .map(function(a) { return a.label + ' ' + a.ratio + '%'; })
+      .join(' · ');
+  }
+
+  function renderBanner(idx, needsUpdate) {
+    const banner  = document.getElementById('indexBanner');
+    const content = document.getElementById('indexBannerContent');
+    if (!banner || !content) return;
+
+    // 갱신 필요 시 배너 색상 변경
+    banner.className = 'index-banner' + (needsUpdate ? ' ib-needs-update' : '');
+
+    const warnHtml = needsUpdate
+      ? '<span class="ib-warn">⚠️ 갱신 필요</span>'
+      : '';
+
+    content.innerHTML = `
+      <span class="ib-month">[${fmtMonth(idx.month)}]</span>
+      <span class="ib-sep">|</span>
+      <span class="ib-key">성비</span>
+      <span class="ib-val">남${idx.maleRatio}% · 여${idx.femaleRatio}%</span>
+      <span class="ib-sep">|</span>
+      <span class="ib-key">연령비</span>
+      <span class="ib-val">${topAges(idx.ageRatio, 3)}</span>
+      ${warnHtml}
+      ${idx.source === 'default' ? '<span style="color:#475569;font-size:11px;margin-left:4px;">(기본값)</span>' : ''}
+    `;
+  }
+
+  async function load() {
+    const workerUrl = (function() {
+      try { return localStorage.getItem('kl_workerUrl') || ''; } catch(e) { return ''; }
+    })();
+
+    if (!workerUrl) {
+      // Worker URL 없으면 기본값 표시
+      renderBanner(DEFAULT, false);
+      return;
+    }
+
+    try {
+      const res  = await fetch(workerUrl + '/index-status');
+      const data = await res.json();
+      currentIndex = data.index || DEFAULT;
+      renderBanner(currentIndex, !!data.needsUpdate);
+    } catch(e) {
+      // 실패 시 기본값
+      currentIndex = DEFAULT;
+      renderBanner(DEFAULT, false);
+      console.warn('[IndexBanner] 인덱스 로드 실패, 기본값 사용:', e.message);
+    }
+  }
+
+  async function refresh() {
+    const workerUrl = (function() {
+      try { return localStorage.getItem('kl_workerUrl') || ''; } catch(e) { return ''; }
+    })();
+
+    if (!workerUrl) {
+      alert('Worker URL이 설정되지 않았습니다.\nAPI 설정에서 Worker URL을 먼저 입력해주세요.');
+      return;
+    }
+
+    const btn = document.getElementById('btnIndexRefresh');
+    const content = document.getElementById('indexBannerContent');
+    if (btn) { btn.disabled = true; btn.classList.add('refreshing'); btn.innerHTML = '<span class="ib-spin"></span> 갱신 중...'; }
+    if (content) content.innerHTML = '<span style="color:#4ade80"><span class="ib-spin"></span> 전월 데이터 수집 중 (약 10~15초)...</span>';
+
+    try {
+      const res  = await fetch(workerUrl + '/index-refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const data = await res.json();
+      if (data.success && data.index) {
+        currentIndex = data.index;
+        renderBanner(currentIndex, false);
+        if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> 완료'; btn.style.color = '#4ade80'; btn.style.borderColor = '#4ade80'; }
+        setTimeout(function() {
+          if (btn) { btn.disabled = false; btn.classList.remove('refreshing'); btn.style.color = ''; btn.style.borderColor = ''; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> 최신화'; }
+        }, 3000);
+      } else {
+        throw new Error(data.error || '갱신 실패');
+      }
+    } catch(e) {
+      if (content) content.innerHTML = '<span style="color:#f87171">⚠️ 갱신 실패: ' + e.message + '</span>';
+      if (btn) { btn.disabled = false; btn.classList.remove('refreshing'); btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> 최신화'; }
+      console.error('[IndexBanner] 갱신 실패:', e);
+    }
+  }
+
+  return { load, refresh, getCurrent: function() { return currentIndex || DEFAULT; } };
+})();
+
+function manualRefreshIndex() { IndexBanner.refresh(); }
 
 class ApiError extends Error {
   constructor(message, code, status, detail) {
@@ -1201,8 +1423,8 @@ function getDefaultAgeRatio() {
 // 키워드 수에 따라 예상 배치/총 호출 수를 계산하고
 // 배치 간 대기 시간을 카운트다운 UI로 표시
 function calcDemoBatches(kwCount) {
-  const chunks = Math.ceil(kwCount / 5);
-  const totalCalls = chunks * 8; // 배치당 8회 (남성+여성+연령6)
+  const chunks = Math.ceil(kwCount / 4); // 인덱스 역산: 청크당 4개 (로보락 포함 5개)
+  const totalCalls = chunks * 9; // 배치당 9회 (남성+여성+연령7)
   return { chunks, totalCalls };
 }
 
@@ -1774,7 +1996,8 @@ function renderDailyTrendChart(dailyResults, period) {
 
 // 트렌드 뷰 토글 (비율 ↔ 검색량) — 월간 + 일간 동시 업데이트
 document.addEventListener('DOMContentLoaded', () => {
-  // 비율/검색량 토글
+  // 인덱스 배너 자동 로드
+  IndexBanner.load();
   document.getElementById('trendViewToggle')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
