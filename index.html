@@ -2663,7 +2663,7 @@ const RelatedSearch = (function() {
 
     // 7) 엑셀 버튼 표시/숨김
     const excelBtn = dom('btnRelatedExcel');
-    if (excelBtn) excelBtn.style.display = (_data.length > 0) ? 'inline-flex' : 'none';
+    if (excelBtn) excelBtn.style.display = (_rawData.length > 0) ? 'inline-flex' : 'none';
   }
 
   // ── API 호출 ──────────────────────────────────────────────────────────────
@@ -2902,7 +2902,7 @@ const RelatedSearch = (function() {
     initFilterBar();
   }
 
-  return { init, onAnalysisDone, getAllData: function() { return _data; }, getBaseKw: function() { return _lastBaseKw; } };
+  return { init, onAnalysisDone, getAllData: function() { return _rawData; }, getBaseKw: function() { return _lastBaseKw; } };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
