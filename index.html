@@ -173,23 +173,18 @@ body {
 .device-bar-mo { background: var(--primary); height: 100%; transition: width .6s ease; }
 
 /* Gender + Age mini */
-.kw-mini-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.mini-chart-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
-.mini-chart-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-.gender-bars { display: flex; flex-direction: column; gap: 6px; }
-.gender-row { display: flex; align-items: center; gap: 8px; }
-.gender-icon { font-size: 13px; width: 14px; text-align: center; }
-.gender-icon.male { color: #3B82F6; }
-.gender-icon.female { color: #EC4899; }
-.gender-bar-wrap { flex: 1; background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; }
-.gender-bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
-.gender-bar-fill.male { background: #3B82F6; }
-.gender-bar-fill.female { background: #EC4899; }
-.gender-pct { font-size: 12px; font-weight: 700; color: var(--text-primary); min-width: 32px; text-align: right; }
-.age-bars { display: flex; align-items: flex-end; gap: 4px; height: 40px; }
-.age-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; gap: 2px; }
+.kw-mini-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mini-chart-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; overflow: hidden; }
+.mini-chart-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.gender-legend-mini { display: flex; flex-direction: column; gap: 4px; }
+.gender-legend-mini-item { display: flex; align-items: center; gap: 4px; }
+.gender-legend-mini-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.gender-legend-mini-label { font-size: 10px; color: var(--text-muted); }
+.gender-legend-mini-pct { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+.age-bars { display: flex; align-items: flex-end; gap: 2px; height: 64px; }
+.age-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; gap: 1px; }
 .age-bar-fill { width: 100%; border-radius: 3px 3px 0 0; transition: height .6s ease; min-height: 2px; }
-.age-bar-lbl { font-size: 9px; color: var(--text-muted); }
+.age-bar-lbl { font-size: 8px; color: var(--text-muted); white-space: nowrap; }
 
 /* CTR badges */
 .ctr-badges { display: flex; gap: 8px; margin-top: 12px; }
@@ -606,33 +601,33 @@ body {
   font-size: 13px;
 }
 
-/* 테이블 */
-.related-list { display: flex; flex-direction: column; }
+/* 테이블 래퍼 - 가로 스크롤 */
+.related-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.related-list { display: table; width: 100%; min-width: 520px; border-collapse: collapse; }
 .related-row {
-  display: grid;
-  grid-template-columns: 36px 1fr 160px 90px 90px 64px;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
+  display: table-row;
+}
+.related-row > * {
+  display: table-cell;
+  vertical-align: middle;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
-  transition: background .1s;
+  white-space: nowrap;
 }
-.related-row:last-child { border-bottom: none; }
-.related-row:hover { background: #f8faff; }
+.related-row:last-child > * { border-bottom: none; }
+.related-row:hover > * { background: #f8faff; }
 
-/* 헤더 행 */
-.related-row.related-header {
+.related-row.related-header > * {
   background: var(--surface-2);
-  border-radius: 8px 8px 0 0;
-  padding: 8px 14px;
   border-bottom: 2px solid var(--border);
   font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   cursor: default;
+  padding: 8px 12px;
 }
-.related-row.related-header:hover { background: var(--surface-2); }
+.related-row.related-header:hover > * { background: var(--surface-2); }
 .related-col-sort {
   display: inline-flex;
   align-items: center;
@@ -653,25 +648,14 @@ body {
 .related-col-sort.asc .sort-arrow { transform: rotate(180deg); }
 
 /* 셀 */
-.related-rank { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
+.related-rank { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; width: 36px; }
 .related-rank.top3 { color: #F59E0B; }
-.related-kw { font-weight: 600; color: var(--text-primary); cursor: pointer; }
+.related-kw { font-weight: 600; color: var(--text-primary); cursor: pointer; min-width: 100px; }
 .related-kw:hover { color: #6366F1; text-decoration: underline; }
 
-/* 검색량 바 */
-.related-vol-cell { display: flex; flex-direction: column; gap: 3px; }
-.related-vol-top { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.related-vol-num { font-weight: 700; color: var(--text-primary); font-size: 13px; min-width: 48px; text-align: right; }
-.related-vol-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; min-width: 40px; }
-.related-vol-bar-fill { height: 100%; background: linear-gradient(90deg,#6366F1,#A78BFA); border-radius: 2px; transition: width .4s ease; }
+/* 검색량 숫자 (바 없음) */
+.related-vol-num { font-weight: 700; color: var(--text-primary); font-size: 13px; text-align: right; }
 .related-sub-num { font-size: 12px; color: var(--text-secondary); text-align: right; }
-
-/* 경쟁도 */
-.related-comp { text-align: center; }
-.comp-chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
-.comp-chip.high { background: #FEE2E2; color: #DC2626; }
-.comp-chip.mid  { background: #FEF3C7; color: #D97706; }
-.comp-chip.low  { background: #DCFCE7; color: #16A34A; }
 
 /* 페이지네이션 */
 .related-pagination {
@@ -700,7 +684,25 @@ body {
 .rel-page-btn.active { background: #6366F1; border-color: #6366F1; color: #fff; }
 .rel-page-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-/* 빈 상태 */
+/* 엑셀 다운로드 버튼 */
+.btn-excel-download {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 8px;
+  background: #16A34A; color: #fff;
+  border: none; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.btn-excel-download:hover { background: #15803D; }
+.btn-excel-sm { padding: 4px 10px; font-size: 11px; }
+.related-pagination-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; padding: 14px 0 4px; flex-wrap: wrap;
+}
+.related-pagination-row .related-pagination { padding: 0; }
+
+
 .related-empty {
   text-align: center;
   padding: 32px 20px;
@@ -709,15 +711,11 @@ body {
 }
 
 /* 미니 도넛 + 연령 % */
-.gender-mini-wrap { display:flex; align-items:center; gap:8px; }
-.gender-mini-donut { flex-shrink:0; }
-.age-bar-col { display:flex; flex-direction:column; align-items:center; gap:2px; }
-.age-bar-pct { font-size:9px; font-weight:700; line-height:1; min-height:12px; }
+.gender-mini-wrap { display:flex; align-items:center; justify-content:center; gap:8px; }
+.gender-mini-donut { flex-shrink:0; width:52px!important; height:52px!important; }
+.age-bar-pct { font-size:8px; font-weight:700; line-height:1; min-height:10px; overflow:hidden; white-space:nowrap; }
 
 @media (max-width: 640px) {
-  .related-row { grid-template-columns: 28px 1fr 110px 64px; }
-  .related-row > .related-comp { display: none; }
-  .related-row > .related-sub-num:last-of-type { display: none; }
   .related-filter-bar { gap: 6px; }
   .related-search-wrap { margin-left: 0; width: 100%; }
   .related-search-input { width: 100%; }
@@ -889,8 +887,15 @@ body {
           <div class="related-loading" id="relatedLoading" style="display:none">
             <i class="fa-solid fa-circle-notch fa-spin"></i> 연관검색어 조회 중...
           </div>
-          <div class="related-list" id="relatedList"></div>
-          <div class="related-pagination" id="relatedPagination"></div>
+          <div class="related-table-wrap">
+            <div class="related-list" id="relatedList"></div>
+          </div>
+          <div class="related-pagination-row">
+            <div class="related-pagination" id="relatedPagination"></div>
+            <button class="btn-excel-download" id="btnRelatedExcel" onclick="downloadRelatedExcel()" style="display:none">
+              <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
+            </button>
+          </div>
         </div>
       </div>
       <div class="tab-content" id="tab-target">
@@ -927,6 +932,9 @@ body {
         <!-- 월간 트렌드 -->
         <div class="trend-section-label">
           <i class="fa-solid fa-calendar-days"></i> 월간 검색 트렌드
+          <button class="btn-excel-download btn-excel-sm" onclick="downloadMonthlyTrendExcel()" style="margin-left:auto;">
+            <i class="fa-solid fa-file-excel"></i> 엑셀
+          </button>
         </div>
         <div class="trend-chart-wrap"><canvas id="trendChart"></canvas></div>
         <div class="trend-legend" id="trendLegend"></div>
@@ -948,6 +956,9 @@ body {
               <i class="fa-solid fa-calendar-week"></i> 주간
             </button>
           </div>
+          <button class="btn-excel-download btn-excel-sm" onclick="downloadDailyTrendExcel()">
+            <i class="fa-solid fa-file-excel"></i> 엑셀
+          </button>
         </div>
         <div class="trend-daily-notice">
           <i class="fa-solid fa-circle-info"></i>
@@ -1043,10 +1054,10 @@ function generateTrendData(months, seed, pattern) {
 }
 
 function generateAgeRatio(dominantAge) {
-  const ages = ['10대', '20대', '30대', '40대', '50대', '60대+'];
-  const base = [5, 15, 25, 25, 20, 10];
+  const ages = ['10대', '20대', '30대', '40대', '50대~'];
+  const base = [8, 20, 28, 27, 17];
   const result = base.map((v, i) => {
-    let adjusted = v + (i === dominantAge ? 20 : -Math.floor(20 / 5));
+    let adjusted = v + (i === dominantAge ? 20 : -Math.floor(20 / 4));
     return Math.max(1, adjusted);
   });
   const total = result.reduce((a, b) => a + b, 0);
@@ -1810,7 +1821,7 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
     //   false = 영문/혼합 키워드 등 DataLab 데이터 없어 인덱스 기본값 사용
     const maleRatio   = (kwData.maleRatio   !== undefined && kwData.maleRatio   !== null) ? kwData.maleRatio   : 50;
     const femaleRatio = (kwData.femaleRatio !== undefined && kwData.femaleRatio !== null) ? kwData.femaleRatio : 50;
-    const ageRatio    = (kwData.ageRatio && kwData.ageRatio.length) ? kwData.ageRatio : getDefaultAgeRatio();
+    const ageRatio    = normalizeAgeRatio((kwData.ageRatio && kwData.ageRatio.length) ? kwData.ageRatio : getDefaultAgeRatio());
     // Worker가 내린 hasDemoData 사용 (없으면 maleRatio 존재 여부로 판단)
     const hasDemoData = (kwData.hasDemoData !== undefined) ? kwData.hasDemoData
       : (kwData.maleRatio !== undefined && kwData.maleRatio !== null);
@@ -1839,8 +1850,54 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
 function getDefaultAgeRatio() {
   return [
     { label: '10대', ratio: 5 }, { label: '20대', ratio: 20 }, { label: '30대', ratio: 30 },
-    { label: '40대', ratio: 25 }, { label: '50대', ratio: 15 }, { label: '60대+', ratio: 5 },
+    { label: '40대', ratio: 25 }, { label: '50대~', ratio: 20 },
   ];
+}
+
+/**
+ * Worker(또는 mock)에서 오는 다양한 연령 라벨 형식을
+ * [10대, 20대, 30대, 40대, 50대~] 5구간으로 합산·정규화
+ *
+ * 지원 입력 라벨:
+ *   '~12','13~19','20~24','25~29','30~39','40~49','50~'   ← Worker 7구간
+ *   '10대','20대','30대','40대','50대','60대+'             ← mock 6구간
+ *   이미 5구간('10대','20대','30대','40대','50대~')인 경우 그대로 반환
+ */
+function normalizeAgeRatio(raw) {
+  if (!raw || !raw.length) return getDefaultAgeRatio();
+
+  // 이미 정규화된 5구간이면 그대로 반환
+  const normalLabels = ['10대','20대','30대','40대','50대~'];
+  if (raw.length === 5 && raw.every((a, i) => a.label === normalLabels[i])) return raw;
+
+  // 라벨 → 버킷 매핑
+  function toBucket(lbl) {
+    if (!lbl) return null;
+    if (lbl === '~12' || lbl === '13~19' || lbl === '10대')        return 0; // 10대
+    if (lbl === '20~24' || lbl === '25~29' || lbl === '20대')      return 1; // 20대
+    if (lbl === '30~39' || lbl === '30대')                          return 2; // 30대
+    if (lbl === '40~49' || lbl === '40대')                          return 3; // 40대
+    if (lbl === '50~' || lbl === '50대' || lbl === '60대+')         return 4; // 50대~
+    return null;
+  }
+
+  const sums = [0, 0, 0, 0, 0];
+  raw.forEach(a => {
+    const b = toBucket(a.label);
+    if (b !== null) sums[b] += (a.ratio || 0);
+  });
+
+  const total = sums.reduce((s, v) => s + v, 0) || 100;
+  const rounded = sums.map(v => Math.round((v / total) * 100));
+
+  // 반올림 오차 보정 (합계 = 100)
+  const diff = 100 - rounded.reduce((s, v) => s + v, 0);
+  if (diff !== 0) {
+    const maxIdx = rounded.indexOf(Math.max(...rounded));
+    rounded[maxIdx] += diff;
+  }
+
+  return normalLabels.map((lbl, i) => ({ label: lbl, ratio: rounded[i] }));
 }
 
 // ── API 배치 카운트다운 헬퍼 ────────────────────────────────────────────────
@@ -1993,7 +2050,7 @@ function renderOverview() {
           }]
         },
         options: {
-          responsive: false, cutout: '65%',
+          responsive: false, cutout: '60%',
           plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } },
           animation: { duration: 400 }
         }
@@ -2012,9 +2069,9 @@ function buildOverviewCard(d) {
   const maxAge      = Math.max(...d.ageRatio.map(a => a.ratio));
   const ageBars     = d.ageRatio.map(a => `
     <div class="age-bar-col">
-      <span class="age-bar-pct" style="color:${a.ratio === maxAge ? d.color : '#94A3B8'}">${a.ratio >= 1 ? Math.round(a.ratio) : a.ratio}%</span>
-      <div class="age-bar-fill" style="height:${Math.round((a.ratio / maxAge) * 36)}px;background:${a.ratio === maxAge ? d.color : d.color + '55'}"></div>
-      <span class="age-bar-lbl">${a.label.replace('대', '')}</span>
+      <span class="age-bar-pct" style="color:${a.ratio === maxAge ? d.color : '#94A3B8'}">${Math.round(a.ratio)}%</span>
+      <div class="age-bar-fill" style="height:${Math.round((a.ratio / maxAge) * 40)}px;background:${a.ratio === maxAge ? d.color : d.color + '55'}"></div>
+      <span class="age-bar-lbl">${a.label.replace(/대~?/, '')}</span>
     </div>
   `).join('');
 
@@ -2076,17 +2133,17 @@ function buildOverviewCard(d) {
         <div class="mini-chart-box">
           <div class="mini-chart-title">성별 비율 ${demoSrcLabel}</div>
           <div class="gender-mini-wrap">
-            <canvas class="gender-mini-donut" id="miniDonut_${d.index}" width="56" height="56"></canvas>
-            <div class="gender-bars">
-              <div class="gender-row">
-                <span class="gender-icon male"><i class="fa-solid fa-mars"></i></span>
-                <div class="gender-bar-wrap"><div class="gender-bar-fill male" style="width:${d.maleRatio}%"></div></div>
-                <span class="gender-pct">${d.maleRatio}%</span>
+            <canvas class="gender-mini-donut" id="miniDonut_${d.index}" width="52" height="52"></canvas>
+            <div class="gender-legend-mini">
+              <div class="gender-legend-mini-item">
+                <div class="gender-legend-mini-dot" style="background:#3B82F6"></div>
+                <span class="gender-legend-mini-label">남</span>
+                <span class="gender-legend-mini-pct">${d.maleRatio}%</span>
               </div>
-              <div class="gender-row">
-                <span class="gender-icon female"><i class="fa-solid fa-venus"></i></span>
-                <div class="gender-bar-wrap"><div class="gender-bar-fill female" style="width:${d.femaleRatio}%"></div></div>
-                <span class="gender-pct">${d.femaleRatio}%</span>
+              <div class="gender-legend-mini-item">
+                <div class="gender-legend-mini-dot" style="background:#EC4899"></div>
+                <span class="gender-legend-mini-label">여</span>
+                <span class="gender-legend-mini-pct">${d.femaleRatio}%</span>
               </div>
             </div>
           </div>
@@ -2603,6 +2660,10 @@ const RelatedSearch = (function() {
 
     // 6) 페이지네이션 렌더
     _renderPagination(totalPages, capped);
+
+    // 7) 엑셀 버튼 표시/숨김
+    const excelBtn = dom('btnRelatedExcel');
+    if (excelBtn) excelBtn.style.display = (_data.length > 0) ? 'inline-flex' : 'none';
   }
 
   // ── API 호출 ──────────────────────────────────────────────────────────────
@@ -2666,14 +2727,11 @@ const RelatedSearch = (function() {
       return;
     }
 
-    // 바 기준: 전체(필터된) 데이터의 최대값
-    const maxVol = fullData.length ? Math.max(...fullData.map(function(d){ return d.totalSearch; })) || 1 : 1;
-
     // 헤더 행
     const sortableCols = [
-      { key: 'totalSearch', label: '총 검색량' },
-      { key: 'pcSearch',    label: 'PC'       },
-      { key: 'mobileSearch',label: '모바일'   },
+      { key: 'totalSearch',  label: '총 검색량' },
+      { key: 'pcSearch',     label: 'PC'        },
+      { key: 'mobileSearch', label: '모바일'    },
     ];
     const header = document.createElement('div');
     header.className = 'related-row related-header';
@@ -2701,19 +2759,12 @@ const RelatedSearch = (function() {
       header.appendChild(span);
     });
 
-    // 경쟁도 헤더
-    const compHeader = document.createElement('span');
-    compHeader.style.textAlign = 'center';
-    compHeader.textContent = '경쟁도';
-    header.appendChild(compHeader);
-
     container.appendChild(header);
 
     // 데이터 행
-    pageData.forEach(function(item, idxInPage) {
-      const globalRank = item.relOrder + 1;  // 원래 연관도 순위
-      const pct  = maxVol > 0 ? Math.round((item.totalSearch / maxVol) * 100) : 0;
-      const row  = document.createElement('div');
+    pageData.forEach(function(item) {
+      const globalRank = item.relOrder + 1;
+      const row = document.createElement('div');
       row.className = 'related-row';
 
       // 순위
@@ -2730,39 +2781,26 @@ const RelatedSearch = (function() {
         if (typeof addKeyword === 'function') addKeyword(item.keyword);
       });
 
-      // 총 검색량 셀 (바 포함)
-      const volCell = document.createElement('div');
-      volCell.className = 'related-vol-cell';
-      volCell.innerHTML =
-        '<div class="related-vol-top">'
-        + '<div class="related-vol-bar-bg"><div class="related-vol-bar-fill" style="width:' + pct + '%"></div></div>'
-        + '<span class="related-vol-num">' + _fmt(item.totalSearch) + '</span>'
-        + '</div>';
+      // 총 검색량 (숫자만, 바 없음)
+      const volEl = document.createElement('span');
+      volEl.className = 'related-vol-num';
+      volEl.textContent = _fmtNum(item.totalSearch);
 
       // PC
       const pcEl = document.createElement('span');
       pcEl.className = 'related-sub-num';
-      pcEl.textContent = _fmt(item.pcSearch);
+      pcEl.textContent = _fmtNum(item.pcSearch);
 
       // 모바일
       const moEl = document.createElement('span');
       moEl.className = 'related-sub-num';
-      moEl.textContent = _fmt(item.mobileSearch);
-
-      // 경쟁도
-      const compEl = document.createElement('span');
-      compEl.className = 'related-comp';
-      const compMap = { high: 'high', mid: 'mid', low: 'low' };
-      const compLbl = { high: '높음', mid: '보통', low: '낮음' };
-      const cKey = compMap[item.competition] || 'low';
-      compEl.innerHTML = '<span class="comp-chip ' + cKey + '">' + (compLbl[cKey] || '-') + '</span>';
+      moEl.textContent = _fmtNum(item.mobileSearch);
 
       row.appendChild(rankEl);
       row.appendChild(kwEl);
-      row.appendChild(volCell);
+      row.appendChild(volEl);
       row.appendChild(pcEl);
       row.appendChild(moEl);
-      row.appendChild(compEl);
       container.appendChild(row);
     });
   }
@@ -2840,9 +2878,15 @@ const RelatedSearch = (function() {
   }
 
   // ── 포맷 헬퍼 ────────────────────────────────────────────────────────────
+  // _fmt: 만 단위 약식 (내부 호환용 유지)
   function _fmt(n) {
     if (!n && n !== 0) return '-';
     if (n >= 10000) return (n / 10000).toFixed(1) + '만';
+    return n.toLocaleString('ko-KR');
+  }
+  // _fmtNum: 실제 숫자 표기 (1,234,567)
+  function _fmtNum(n) {
+    if (!n && n !== 0) return '-';
     return n.toLocaleString('ko-KR');
   }
 
@@ -2858,7 +2902,7 @@ const RelatedSearch = (function() {
     initFilterBar();
   }
 
-  return { init, onAnalysisDone };
+  return { init, onAnalysisDone, getAllData: function() { return _data; }, getBaseKw: function() { return _lastBaseKw; } };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2965,6 +3009,128 @@ function showToast(msg, type = '') {
 }
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+/* =====================================================
+   엑셀(CSV) 다운로드 유틸리티
+===================================================== */
+function csvDownload(filename, rows) {
+  // rows: [ ['헤더1','헤더2',...], ['값1','값2',...], ... ]
+  const BOM = '\uFEFF'; // 한글 깨짐 방지 UTF-8 BOM
+  const csv = BOM + rows.map(row =>
+    row.map(cell => {
+      const s = String(cell == null ? '' : cell);
+      // 콤마, 줄바꿈, 따옴표 포함 시 따옴표로 감싸기
+      return /[,\n"]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',')
+  ).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// 1) 연관검색어 전체 다운로드
+function downloadRelatedExcel() {
+  const data = RelatedSearch.getAllData(); // _data 전체 반환
+  if (!data || !data.length) { showToast('다운로드할 데이터가 없습니다.', 'error'); return; }
+  const baseKw = RelatedSearch.getBaseKw() || '연관검색어';
+  const rows = [['순위', '키워드', '총 검색량', 'PC 검색량', '모바일 검색량']];
+  data.forEach((item, i) => {
+    rows.push([
+      item.relOrder + 1,
+      item.keyword,
+      item.totalSearch || 0,
+      item.pcSearch    || 0,
+      item.mobileSearch || 0
+    ]);
+  });
+  const today = new Date().toISOString().slice(0, 10);
+  csvDownload(`연관검색어_${baseKw}_${today}.csv`, rows);
+}
+
+// 2) 월간 검색 트렌드 다운로드
+function downloadMonthlyTrendExcel() {
+  if (!analysisData || !analysisData.length) { showToast('트렌드 데이터가 없습니다.', 'error'); return; }
+  const isVolume = (trendViewMode === 'volume');
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - trendPeriod + 1, 1);
+
+  // 모든 키워드의 기간 합집합 수집
+  const periodSet = new Set();
+  analysisData.forEach(d => {
+    const trend = (d.trendData[trendDevice] || []).filter(t => {
+      const [y, m] = t.period.split('-').map(Number);
+      return new Date(y, m - 1, 1) >= cutoff;
+    });
+    trend.forEach(t => periodSet.add(t.period));
+  });
+  const periods = [...periodSet].sort();
+
+  const header = ['기간', ...analysisData.map(d => d.keyword + (isVolume ? '_검색량(추정)' : '_비율(%)'))];
+  const rows = [header];
+
+  periods.forEach(period => {
+    const row = [period];
+    analysisData.forEach(d => {
+      const trend = (d.trendData[trendDevice] || []).filter(t => {
+        const [y, m] = t.period.split('-').map(Number);
+        return new Date(y, m - 1, 1) >= cutoff;
+      });
+      const pt = trend.find(t => t.period === period);
+      if (!pt) { row.push(''); return; }
+      if (isVolume) {
+        const withVol = estimateVolumeFromTrend(trend, d.totalSearch);
+        const vt = withVol.find(t => t.period === period);
+        row.push(vt ? vt.volume : 0);
+      } else {
+        row.push(pt.ratio);
+      }
+    });
+    rows.push(row);
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+  const kwStr = analysisData.map(d => d.keyword).join('_');
+  csvDownload(`월간트렌드_${kwStr}_${today}.csv`, rows);
+}
+
+// 3) 일간 검색 트렌드 다운로드
+function downloadDailyTrendExcel() {
+  if (!rawDailyTrendData || !rawDailyTrendData.length) { showToast('일간 트렌드 데이터가 없습니다.', 'error'); return; }
+  const isVolume = (trendViewMode === 'volume');
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - trendPeriod + 1, 1);
+
+  // 기간별 데이터 수집
+  const periodSet = new Set();
+  rawDailyTrendData.forEach(d => {
+    (d.data || []).forEach(t => {
+      if (!t.period || t.period.length < 10) return;
+      const [y, m, day] = t.period.split('-').map(Number);
+      if (new Date(y, m - 1, day) >= cutoff) periodSet.add(t.period);
+    });
+  });
+  const periods = [...periodSet].sort();
+
+  const header = ['날짜', ...rawDailyTrendData.map(d => d.keyword + (isVolume ? '_검색량(추정)' : '_비율(%)'))];
+  const rows = [header];
+
+  periods.forEach(period => {
+    const row = [period];
+    rawDailyTrendData.forEach(d => {
+      const kwData = analysisData.find(a => (a.keyword || '').toLowerCase() === (d.keyword || '').toLowerCase()) || {};
+      const allData = calcDailyVolumes(d.data || [], kwData);
+      const pt = allData.find(t => t.period === period);
+      row.push(pt ? (isVolume ? (pt.volume || 0) : (pt.ratio || 0)) : '');
+    });
+    rows.push(row);
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+  const kwStr = rawDailyTrendData.map(d => d.keyword).join('_');
+  csvDownload(`일간트렌드_${kwStr}_${today}.csv`, rows);
+}
 
 /* Init */
 renderTags();
