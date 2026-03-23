@@ -156,8 +156,10 @@ body {
 .ctr-badge-na .ctr-badge-value { color: var(--text-muted) !important; font-size:14px !important; }
 
 /* Stats Row */
-.kw-stats-main { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.kw-stats-main { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 .stat-item { text-align: center; padding: 12px 8px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.stat-item-group { display: flex; flex-direction: column; gap: 8px; }
+.stat-item-group .stat-item { flex: 1; padding: 8px; }
 .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .stat-value { font-size: 18px; font-weight: 800; color: var(--text-primary); }
 .stat-value.highlight { color: var(--primary); }
@@ -323,7 +325,6 @@ body {
   .tab-btn { min-width: 80px; font-size: 12px; padding: 9px 10px; gap: 5px; }
   .trend-controls { flex-direction: column; align-items: flex-start; }
   .gender-donut-wrap { flex-direction: column; }
-  .kw-stats-main { grid-template-columns: 1fr 1fr; }
   .kw-mini-charts { grid-template-columns: 1fr; }
   .header-inner { padding: 0 16px; }
   .logo-text { font-size: 16px; }
@@ -331,8 +332,6 @@ body {
 }
 @media (max-width: 480px) {
   .overview-grid { grid-template-columns: 1fr; }
-  .kw-stats-main { grid-template-columns: 1fr; }
-  .ctr-badges { flex-direction: column; }
 }
 /* ── 로보락 인덱스 띠배너 ─────────────────────────────────────────────────── */
 .index-banner {
@@ -2108,15 +2107,15 @@ function buildOverviewCard(d) {
           <div class="stat-value highlight">${formatNumber(d.totalSearch)}</div>
           <div class="stat-sub">최근 1개월${isEstimated ? ' <span style="color:#F59E0B">*추정</span>' : ''}</div>
         </div>
-        <div class="stat-item">
-          <div class="stat-label">PC 검색량</div>
-          <div class="stat-value">${formatNumber(d.pcSearch)}</div>
-          <div class="stat-sub">${d.pcRatio}%</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">MO 검색량</div>
-          <div class="stat-value">${formatNumber(d.mobileSearch)}</div>
-          <div class="stat-sub">${d.mobileRatio}%</div>
+        <div class="stat-item-group">
+          <div class="stat-item">
+            <div class="stat-label">PC</div>
+            <div class="stat-value">${formatNumber(d.pcSearch)}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">MO</div>
+            <div class="stat-value">${formatNumber(d.mobileSearch)}</div>
+          </div>
         </div>
       </div>
       <div class="device-split">
@@ -2151,18 +2150,6 @@ function buildOverviewCard(d) {
         <div class="mini-chart-box">
           <div class="mini-chart-title">연령대 ${demoSrcLabel}</div>
           <div class="age-bars">${ageBars}</div>
-        </div>
-      </div>
-      <div class="ctr-badges">
-        <div class="ctr-badge pc-badge${d.pcCtr == null ? ' ctr-badge-na' : ''}">
-          <div class="ctr-badge-label">PC CTR</div>
-          <div class="ctr-badge-value">${pcCtrTxt}</div>
-          <div class="ctr-badge-sub">${pcClicksTxt}</div>
-        </div>
-        <div class="ctr-badge mo-badge${d.moCtr == null ? ' ctr-badge-na' : ''}">
-          <div class="ctr-badge-label">MO CTR</div>
-          <div class="ctr-badge-value">${moCtrTxt}</div>
-          <div class="ctr-badge-sub">${moClicksTxt}</div>
         </div>
       </div>
     </div>
