@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 /* ===================================================
    팅모의 KeywordLens – 네이버 키워드 분석
@@ -202,7 +204,12 @@ body {
 .ctr-badge-sub { font-size: 10px; color: var(--text-muted); }
 
 /* Target Analysis */
-.target-keyword-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.target-top-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.target-top-bar .target-keyword-nav { margin-bottom: 0; flex: 1; }
+.target-dl-btns { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.btn-pdf-download { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 8px; background: #DC2626; color: #fff; border: none; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; white-space: nowrap; }
+.btn-pdf-download:hover { background: #B91C1C; }
+.target-keyword-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
 .target-kw-btn { padding: 7px 18px; border-radius: 20px; border: 2px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all .2s; font-family: inherit; }
 .target-kw-btn.active { color: #fff; border-color: transparent; }
 .target-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -795,7 +802,7 @@ body {
         <div class="related-option-panel" id="relatedOptionPanel" style="display:block">
           <div class="related-option-desc">
             <i class="fa-solid fa-circle-info" style="color:#6366F1"></i>
-            <span>입력창의 <strong>첫 번째 키워드</strong>를 기준으로 네이버 연관검색어의 월간 검색량을 조회합니다.<br>분석 시작 후 <strong>키워드 개요</strong> 탭 하단에서 결과를 확인하세요.</span>
+            <span>입력창의 <strong>모든 키워드</strong>를 기준으로 네이버 연관검색어의 월간 검색량을 조회합니다. 키워드별 연관검색어를 통합하여 중복 없이 보여줍니다.<br>분석 시작 후 <strong>키워드 개요</strong> 탭 하단에서 결과를 확인하세요.</span>
           </div>
         </div>
       </div>
@@ -898,7 +905,17 @@ body {
         </div>
       </div>
       <div class="tab-content" id="tab-target">
-        <div class="target-keyword-nav" id="targetKeywordNav"></div>
+        <div class="target-top-bar">
+          <div class="target-keyword-nav" id="targetKeywordNav"></div>
+          <div class="target-dl-btns">
+            <button class="btn-excel-download btn-excel-sm" onclick="downloadTargetExcel()">
+              <i class="fa-solid fa-file-excel"></i> 엑셀
+            </button>
+            <button class="btn-pdf-download btn-excel-sm" onclick="downloadTargetPDF()">
+              <i class="fa-solid fa-file-pdf"></i> PDF
+            </button>
+          </div>
+        </div>
         <div class="target-charts" id="targetCharts"></div>
       </div>
       <div class="tab-content" id="tab-trend">
@@ -2003,8 +2020,8 @@ function renderResults() {
   renderTrend();
   renderEfficiency();
   switchTab('overview');
-  // ★ 연관검색어 퀵조회: 첫 번째 키워드 기준으로 자동 조회 (활성화된 경우)
-  if (keywords.length > 0) RelatedSearch.onAnalysisDone(keywords[0]);
+  // ★ 연관검색어 퀵조회: 입력된 전체 키워드 기준으로 자동 조회 (활성화된 경우)
+  if (keywords.length > 0) RelatedSearch.onAnalysisDone(keywords);
 }
 
 function updateModeBadge() {
@@ -2516,9 +2533,10 @@ function renderDailyTrendChart(dailyResults, period) {
 // ════════════════════════════════════════════════════════════════════════════
 const RelatedSearch = (function() {
   // ── 상태 ──────────────────────────────────────────────────────────────────
-  let _enabled    = false;
-  let _lastBaseKw = '';
-  let _rawData    = [];   // API 원본 전체
+  let _enabled      = false;
+  let _lastBaseKw   = '';
+  let _lastKeywords = [];  // 전체 키워드 목록
+  let _rawData      = [];   // API 원본 전체
 
   // 정렬 상태
   let _sortKey = 'relOrder';   // 기본: 연관도순
@@ -2557,8 +2575,8 @@ const RelatedSearch = (function() {
     if (cb) {
       cb.addEventListener('change', function() {
         _enabled = cb.checked;
-        if (_enabled && _lastBaseKw) {
-          _fetchAndRender(_lastBaseKw);
+        if (_enabled && (_lastKeywords.length > 0 || _lastBaseKw)) {
+          _fetchAndRenderAll(_lastKeywords.length > 0 ? _lastKeywords : [_lastBaseKw]);
         } else if (!_enabled) {
           const sec = dom('relatedResultsSection');
           if (sec) sec.style.display = 'none';
@@ -2654,7 +2672,14 @@ const RelatedSearch = (function() {
   }
 
   // ── API 호출 ──────────────────────────────────────────────────────────────
+  // 단일 키워드 fetch (내부용)
   async function _fetchAndRender(baseKw) {
+    return _fetchAndRenderAll([baseKw]);
+  }
+
+  // 여러 키워드의 연관검색어를 병합하여 조회
+  async function _fetchAndRenderAll(kwList) {
+    if (!kwList || !kwList.length) return;
     const section  = dom('relatedResultsSection');
     const loading  = dom('relatedLoading');
     const list     = dom('relatedList');
@@ -2667,13 +2692,40 @@ const RelatedSearch = (function() {
     loading.style.display = 'block';
     list.innerHTML  = '';
     if (pager) pager.innerHTML = '';
-    baseEl.textContent = '"' + baseKw + '" 기준';
+    const kwLabel = kwList.length === 1 ? ('"' + kwList[0] + '" 기준') : ('"' + kwList.join('", "') + '" 전체 기준');
+    baseEl.textContent = kwLabel;
     metaEl.textContent = '조회 중...';
 
     try {
-      const json  = await ApiClient.fetchRelated(baseKw);
-      _rawData    = json.related || [];
-      _lastBaseKw = baseKw;
+      // 모든 키워드 병렬 조회 후 병합 (중복 키워드는 가장 높은 검색량 우선)
+      const results = await Promise.allSettled(kwList.map(kw => ApiClient.fetchRelated(kw)));
+      const merged = {};
+      results.forEach((res, idx) => {
+        if (res.status !== 'fulfilled') return;
+        const items = res.value.related || [];
+        items.forEach(item => {
+          const key = (item.keyword || '').toLowerCase();
+          if (!merged[key]) {
+            merged[key] = Object.assign({}, item, { sourceKw: kwList[idx] });
+          } else {
+            // 검색량 더 높은 쪽 유지, relOrder는 최솟값 유지
+            if ((item.totalSearch || 0) > (merged[key].totalSearch || 0)) {
+              merged[key] = Object.assign({}, item, { sourceKw: kwList[idx] });
+            }
+            if ((item.relOrder || 999) < (merged[key].relOrder || 999)) {
+              merged[key].relOrder = item.relOrder;
+            }
+          }
+        });
+      });
+
+      _rawData    = Object.values(merged);
+      // relOrder 재정렬
+      _rawData.sort((a, b) => (a.relOrder || 999) - (b.relOrder || 999));
+      _rawData.forEach((item, i) => { item.relOrder = i; });
+
+      _lastBaseKw = kwList[0];
+      _lastKeywords = kwList;
       loading.style.display = 'none';
 
       // 상태 초기화
@@ -2878,10 +2930,13 @@ const RelatedSearch = (function() {
   }
 
   // ── 공개 API ──────────────────────────────────────────────────────────────
-  function onAnalysisDone(baseKw) {
-    if (!_enabled || !baseKw) return;
-    _lastBaseKw = baseKw;
-    _fetchAndRender(baseKw);
+  function onAnalysisDone(kwOrList) {
+    if (!_enabled) return;
+    const list = Array.isArray(kwOrList) ? kwOrList : (kwOrList ? [kwOrList] : []);
+    if (!list.length) return;
+    _lastBaseKw   = list[0];
+    _lastKeywords = list;
+    _fetchAndRenderAll(list);
   }
 
   function init() {
@@ -2889,7 +2944,7 @@ const RelatedSearch = (function() {
     initFilterBar();
   }
 
-  return { init, onAnalysisDone, getAllData: function() { return _rawData; }, getBaseKw: function() { return _lastBaseKw; } };
+  return { init, onAnalysisDone, getAllData: function() { return _rawData; }, getBaseKw: function() { return _lastBaseKw; }, getKeywords: function() { return _lastKeywords; } };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3017,23 +3072,186 @@ function csvDownload(filename, rows) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// 0) 타겟 분석 엑셀 다운로드
+function downloadTargetExcel() {
+  if (!analysisData || !analysisData.length) { showToast('분석 데이터가 없습니다.', 'error'); return; }
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 시트 1: 성별/연령 요약
+  const rows = [['키워드', '총 검색량', 'PC 검색량', 'PC 비율(%)', '모바일 검색량', '모바일 비율(%)',
+                  '남성 비율(%)', '여성 비율(%)', '경쟁도', '효율 점수']];
+  analysisData.forEach(d => {
+    rows.push([
+      d.keyword,
+      d.totalSearch || 0,
+      d.pcSearch || 0,
+      d.pcRatio || 0,
+      d.mobileSearch || 0,
+      d.mobileRatio || 0,
+      d.maleRatio || 0,
+      d.femaleRatio || 0,
+      d.competitionLabel || '',
+      d.efficiencyScore || 0
+    ]);
+  });
+
+  // 빈 줄 + 연령대 섹션
+  rows.push([]);
+  rows.push(['[연령대 분포]']);
+  const ageLabels = (analysisData[0]?.ageRatio || []).map(a => a.label);
+  rows.push(['키워드', ...ageLabels.map(l => l + '(%)')]);
+  analysisData.forEach(d => {
+    const ageVals = ageLabels.map(lbl => {
+      const a = (d.ageRatio || []).find(x => x.label === lbl);
+      return a ? a.ratio : 0;
+    });
+    rows.push([d.keyword, ...ageVals]);
+  });
+
+  // CTR 섹션
+  rows.push([]);
+  rows.push(['[클릭 효율]']);
+  rows.push(['키워드', 'PC CTR(%)', 'PC 예상클릭', '모바일 CTR(%)', '모바일 예상클릭']);
+  analysisData.forEach(d => {
+    rows.push([d.keyword, d.pcCtr || 0, d.pcClicks || 0, d.moCtr || 0, d.moClicks || 0]);
+  });
+
+  const kwStr = analysisData.map(d => d.keyword).join('_');
+  csvDownload(`타겟분석_${kwStr}_${today}.csv`, rows);
+  showToast('타겟 분석 엑셀이 다운로드되었습니다.', 'success');
+}
+
+// 0-b) 타겟 분석 PDF 다운로드
+async function downloadTargetPDF() {
+  if (!analysisData || !analysisData.length) { showToast('분석 데이터가 없습니다.', 'error'); return; }
+
+  const btn = document.querySelector('.btn-pdf-download');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 생성 중...'; }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 12;
+    const today = new Date().toLocaleDateString('ko-KR');
+
+    // PDF 커버 페이지
+    pdf.setFillColor(15, 23, 42);
+    pdf.rect(0, 0, pageW, 40, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('KeywordLens - Target Analysis', margin, 20);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Generated: ${today}  |  Keywords: ${analysisData.map(d => d.keyword).join(', ')}`, margin, 32);
+
+    let yPos = 50;
+
+    // 각 키워드별 데이터 테이블
+    analysisData.forEach((d, idx) => {
+      if (yPos > 240) { pdf.addPage(); yPos = 15; }
+
+      // 키워드 헤더
+      pdf.setFillColor(3, 199, 90);
+      pdf.rect(margin, yPos, pageW - margin * 2, 8, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`[${idx + 1}] ${d.keyword}`, margin + 3, yPos + 5.5);
+      yPos += 12;
+
+      // 기본 검색량 정보
+      pdf.setTextColor(30, 30, 30);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      const info1 = `총 검색량: ${(d.totalSearch || 0).toLocaleString()}  |  PC: ${(d.pcSearch || 0).toLocaleString()} (${d.pcRatio}%)  |  모바일: ${(d.mobileSearch || 0).toLocaleString()} (${d.mobileRatio}%)`;
+      pdf.text(info1, margin, yPos);
+      yPos += 6;
+
+      const info2 = `경쟁도: ${d.competitionLabel || '-'}  |  효율 점수: ${d.efficiencyScore || 0}  |  남성: ${d.maleRatio}%  |  여성: ${d.femaleRatio}%`;
+      pdf.text(info2, margin, yPos);
+      yPos += 6;
+
+      // 연령대 분포
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('연령대 분포:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      const ageTxt = (d.ageRatio || []).map(a => `${a.label}:${a.ratio}%`).join('  ');
+      pdf.text(ageTxt, margin + 22, yPos);
+      yPos += 6;
+
+      // CTR
+      const info3 = `PC CTR: ${d.pcCtr || 0}%  /  PC 예상클릭: ${(d.pcClicks || 0).toLocaleString()}  |  MO CTR: ${d.moCtr || 0}%  /  MO 예상클릭: ${(d.moClicks || 0).toLocaleString()}`;
+      pdf.text(info3, margin, yPos);
+      yPos += 10;
+
+      // 구분선
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(margin, yPos - 4, pageW - margin, yPos - 4);
+    });
+
+    // 타겟 차트 섹션 캡처 (차트 시각화 포함)
+    const targetEl = document.getElementById('targetCharts');
+    if (targetEl) {
+      try {
+        if (yPos > 180) { pdf.addPage(); yPos = 15; }
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(30, 30, 30);
+        pdf.text('Chart Visualization (Current Keyword)', margin, yPos);
+        yPos += 5;
+
+        const canvas = await html2canvas(targetEl, {
+          scale: 1.5,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgW = pageW - margin * 2;
+        const imgH = (canvas.height / canvas.width) * imgW;
+        const availH = 297 - yPos - 10;
+        const finalH = Math.min(imgH, availH);
+        pdf.addImage(imgData, 'JPEG', margin, yPos, imgW, finalH);
+      } catch (e) {
+        console.warn('차트 캡처 실패:', e);
+      }
+    }
+
+    const kwStr = analysisData.map(d => d.keyword).join('_');
+    const today2 = new Date().toISOString().slice(0, 10);
+    pdf.save(`타겟분석_${kwStr}_${today2}.pdf`);
+    showToast('PDF가 다운로드되었습니다.', 'success');
+  } catch (e) {
+    console.error('PDF 생성 오류:', e);
+    showToast('PDF 생성 중 오류가 발생했습니다.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> PDF'; }
+  }
+}
+
 // 1) 연관검색어 전체 다운로드
 function downloadRelatedExcel() {
   const data = RelatedSearch.getAllData(); // _data 전체 반환
   if (!data || !data.length) { showToast('다운로드할 데이터가 없습니다.', 'error'); return; }
-  const baseKw = RelatedSearch.getBaseKw() || '연관검색어';
-  const rows = [['순위', '키워드', '총 검색량', 'PC 검색량', '모바일 검색량']];
+  const allKws = RelatedSearch.getKeywords ? RelatedSearch.getKeywords() : [];
+  const baseKw = allKws.length > 0 ? allKws.join('_') : (RelatedSearch.getBaseKw() || '연관검색어');
+  const rows = [['순위', '키워드', '총 검색량', 'PC 검색량', '모바일 검색량', '기준 키워드']];
   data.forEach((item, i) => {
     rows.push([
       item.relOrder + 1,
       item.keyword,
       item.totalSearch || 0,
       item.pcSearch    || 0,
-      item.mobileSearch || 0
+      item.mobileSearch || 0,
+      item.sourceKw || ''
     ]);
   });
   const today = new Date().toISOString().slice(0, 10);
-  csvDownload(`연관검색어_${baseKw}_${today}.csv`, rows);
+  const safeKw = baseKw.replace(/[^a-zA-Z0-9가-힣_]/g, '_').slice(0, 40);
+  csvDownload(`연관검색어_${safeKw}_${today}.csv`, rows);
+  showToast('연관검색어 엑셀이 다운로드되었습니다.', 'success');
 }
 
 // 2) 월간 검색 트렌드 다운로드
