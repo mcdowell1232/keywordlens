@@ -209,7 +209,7 @@ body {
 .target-dl-btns { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
 .btn-pdf-download { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 8px; background: #DC2626; color: #fff; border: none; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; white-space: nowrap; }
 .btn-pdf-download:hover { background: #B91C1C; }
-.target-keyword-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
+.target-keyword-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
 .target-kw-btn { padding: 7px 18px; border-radius: 20px; border: 2px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all .2s; font-family: inherit; }
 .target-kw-btn.active { color: #fff; border-color: transparent; }
 .target-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -233,7 +233,17 @@ body {
 .insight-text strong { color: var(--text-primary); }
 
 /* Trend Chart */
-.trend-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.trend-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px; }
+/* 기간 직접 지정 */
+.trend-custom-range { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px 10px; flex-wrap:wrap; }
+.trend-custom-range label { font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap; }
+.trend-custom-range input[type=date] { border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:12px; font-family:inherit; color:var(--text-primary); background:var(--surface-2); cursor:pointer; outline:none; }
+.trend-custom-range input[type=date]:focus { border-color:var(--primary); }
+.trend-custom-range .sep { color:var(--text-muted); font-size:12px; }
+.btn-apply-range { padding:5px 12px; border-radius:6px; background:var(--primary); color:#fff; border:none; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s; white-space:nowrap; }
+.btn-apply-range:hover { background:var(--primary-dark); }
+.btn-reset-range { padding:5px 10px; border-radius:6px; background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+.btn-reset-range:hover { background:var(--border); color:var(--text-primary); }
 .trend-period-btns, .trend-device-btns { display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .period-btn, .device-btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); background: transparent; cursor: pointer; transition: all .2s; font-family: inherit; }
 .period-btn.active, .device-btn.active { background: var(--primary); color: #fff; }
@@ -260,6 +270,13 @@ body {
 .trend-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .trend-legend-line { width: 24px; height: 3px; border-radius: 2px; }
 
+/* 요일별 검색 비율 차트 */
+.dow-section { margin-top: 32px; }
+.dow-chart-wrap { background: var(--surface); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); height: 320px; position: relative; }
+.dow-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+.dow-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:240px; gap:12px; color:#94A3B8; font-size:13px; }
+.dow-empty i { font-size:28px; color:#CBD5E1; }
+.dow-notice { display:flex; align-items:center; gap:8px; background:#FFF7ED; border:1px solid #FED7AA; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#9A3412; }
 /* Efficiency Table */
 .efficiency-table-wrap { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow-x: auto; }
 .efficiency-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -624,6 +641,7 @@ body {
 .related-row:last-child > * { border-bottom: none; }
 .related-row:hover > * { background: #f8faff; }
 
+/* 헤더 행 */
 .related-row.related-header > * {
   background: var(--surface-2);
   border-bottom: 2px solid var(--border);
@@ -690,6 +708,14 @@ body {
 .rel-page-btn.active { background: #6366F1; border-color: #6366F1; color: #fff; }
 .rel-page-btn:disabled { opacity: .4; cursor: not-allowed; }
 
+/* 빈 상태 */
+.related-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 /* 엑셀 다운로드 버튼 */
 .btn-excel-download {
   display: inline-flex; align-items: center; gap: 5px;
@@ -708,17 +734,10 @@ body {
 }
 .related-pagination-row .related-pagination { padding: 0; }
 
-
-.related-empty {
-  text-align: center;
-  padding: 32px 20px;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
 /* 미니 도넛 + 연령 % */
 .gender-mini-wrap { display:flex; align-items:center; justify-content:center; gap:8px; }
 .gender-mini-donut { flex-shrink:0; width:52px!important; height:52px!important; }
+.age-bar-col { display:flex; flex-direction:column; align-items:center; gap:1px; }
 .age-bar-pct { font-size:8px; font-weight:700; line-height:1; min-height:10px; overflow:hidden; white-space:nowrap; }
 
 @media (max-width: 640px) {
@@ -921,7 +940,7 @@ body {
       <div class="tab-content" id="tab-trend">
         <!-- 공통 필터 컨트롤 -->
         <div class="trend-controls">
-          <div class="trend-period-btns">
+          <div class="trend-period-btns" id="trendPeriodBtns">
             <button class="period-btn" data-period="1">1개월</button>
             <button class="period-btn active" data-period="3">3개월</button>
             <button class="period-btn" data-period="6">6개월</button>
@@ -935,6 +954,15 @@ body {
               <i class="fa-solid fa-magnifying-glass"></i> 검색량
             </button>
           </div>
+        </div>
+        <!-- 기간 직접 지정 -->
+        <div class="trend-custom-range" id="trendCustomRange">
+          <label><i class="fa-solid fa-calendar-range" style="color:#7C3AED"></i> 기간 직접 지정</label>
+          <input type="date" id="customStartDate" />
+          <span class="sep">~</span>
+          <input type="date" id="customEndDate" />
+          <button class="btn-apply-range" id="btnApplyRange" onclick="applyCustomRange()">적용</button>
+          <button class="btn-reset-range" id="btnResetRange" onclick="resetCustomRange()" style="display:none">초기화</button>
         </div>
         <div class="trend-volume-notice" id="trendVolumeNotice" style="display:none">
           <i class="fa-solid fa-circle-info"></i>
@@ -988,6 +1016,25 @@ body {
           <canvas id="dailyTrendChart" style="display:none"></canvas>
         </div>
         <div class="trend-legend" id="dailyTrendLegend"></div>
+
+        <!-- 요일별 검색 비율 -->
+        <div class="dow-section">
+          <div class="trend-section-label" style="margin-top:32px;">
+            <i class="fa-solid fa-chart-column" style="color:#F59E0B"></i> 요일별 검색 비율
+          </div>
+          <div class="dow-notice">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>1년치 일간 트렌드 데이터를 요일별로 집계한 <strong>상대적 검색 비율</strong>입니다. 실제 절대 검색량과 무관하며 피크 요일을 100으로 정규화합니다.</span>
+          </div>
+          <div class="dow-chart-wrap" id="dowChartWrap">
+            <div class="dow-empty" id="dowEmpty">
+              <i class="fa-solid fa-hourglass-half"></i>
+              <span>분석을 시작하면 요일별 데이터가 표시됩니다</span>
+            </div>
+            <canvas id="dowChart" style="display:none"></canvas>
+          </div>
+          <div class="trend-legend" id="dowLegend" style="margin-top:12px;"></div>
+        </div>
       </div>
       <div class="tab-content" id="tab-efficiency">
         <div class="efficiency-table-wrap">
@@ -1264,11 +1311,38 @@ const ApiClient = (() => {
     console.log('[daily] raw 응답 첫번째 결과:', data.results?.[0]?.data?.slice(0,3));
     return parseTrendResponse(data, keywords, true); // isDaily = true
   }
+  async function fetchTrendDataCustom(keywords, startDate, endDate, device = 'all') {
+    const deviceParam = device === 'all' ? undefined : device;
+    const data = await apiFetch('/trend', {
+      method: 'POST',
+      body: JSON.stringify({ keywords, startDate, endDate, device: deviceParam }),
+    });
+    return parseTrendResponse(data, keywords);
+  }
+  // 커스텀 기간 일간 트렌드 (시작일~종료일 직접 지정, timeUnit=date)
+  async function fetchDailyTrendDataCustom(keywords, startDate, endDate) {
+    // 네이버 DataLab 일간 최대 범위: 1년(365일) 이하만 허용
+    // 요청 범위가 1년 초과이면 최대 1년으로 클램핑 (종료일 기준)
+    const start = new Date(startDate);
+    const end   = new Date(endDate);
+    const maxStart = new Date(end);
+    maxStart.setFullYear(maxStart.getFullYear() - 1);
+    maxStart.setDate(maxStart.getDate() + 1);
+    const effectiveStart = start < maxStart ? maxStart : start;
+    const sDate = formatDate(effectiveStart);
+    const eDate = formatDate(end);
+    console.log('[daily-custom] 요청:', sDate, '~', eDate, keywords);
+    const data = await apiFetch('/trend', {
+      method: 'POST',
+      body: JSON.stringify({ keywords, startDate: sDate, endDate: eDate, timeUnit: 'date' }),
+    }, 30000);
+    return parseTrendResponse(data, keywords, true);
+  }
   async function healthCheck() { return apiFetch('/health'); }
   async function fetchRelated(keyword) {
     return apiFetch('/related', { method: 'POST', body: JSON.stringify({ keyword }) }, 15000);
   }
-  return { fetchKeywordData, fetchDemographicData, fetchTrendData, fetchDailyTrendData, healthCheck, fetchRelated, getPeriodDates, formatDate };
+  return { fetchKeywordData, fetchDemographicData, fetchTrendData, fetchTrendDataCustom, fetchDailyTrendData, fetchDailyTrendDataCustom, healthCheck, fetchRelated, getPeriodDates, formatDate };
 })();
 
 // ── 로보락 인덱스 배너 ─────────────────────────────────────────────────────
@@ -1485,27 +1559,39 @@ function renderAgeBar(canvasId, ageRatio, color) {
   });
 }
 
-function renderTrendChart(allData, period, device) {
+function renderTrendChart(allData, period, device, dateRange) {
   const ctx = document.getElementById('trendChart');
   if (!ctx) return;
   if (trendChartInstance) trendChartInstance.destroy();
-  const now = new Date();
-  const cutoff = new Date(now.getFullYear(), now.getMonth() - period + 1, 1);
-
   const isVolume = (trendViewMode === 'volume');
+
+  // dateRange = { start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' } 가 있으면 직접 필터
+  // 없으면 기존 period(months) 기반 cutoff
+  let cutoff = null;
+  let rangeEnd = null;
+  if (dateRange && dateRange.start && dateRange.end) {
+    cutoff   = new Date(dateRange.start);
+    rangeEnd = new Date(dateRange.end);
+  } else {
+    const now = new Date();
+    cutoff = new Date(now.getFullYear(), now.getMonth() - (period || trendPeriod) + 1, 1);
+  }
 
   // 각 키워드별 필터링된 트렌드 + 검색량 역산
   const filteredData = allData.map(d => {
     const trend = d.trendData[device] || [];
     const filtered = trend.filter(t => {
       const [y, m] = t.period.split('-').map(Number);
-      return new Date(y, m - 1, 1) >= cutoff;
+      const dt = new Date(y, m - 1, 1);
+      if (rangeEnd) return dt >= cutoff && dt <= rangeEnd;
+      return dt >= cutoff;
     });
     const withVolume = estimateVolumeFromTrend(filtered, d.totalSearch);
     return { ...d, filteredTrend: filtered, filteredVolume: withVolume };
   });
 
-  const labels = filteredData[0]?.filteredTrend.map(t => formatPeriodLabel(t.period, period <= 3)) || [];
+  const effPeriod = dateRange ? 3 : (period || trendPeriod);
+  const labels = filteredData[0]?.filteredTrend.map(t => formatPeriodLabel(t.period, effPeriod <= 3)) || [];
 
   // 트렌드 없는 키워드 안내 (영문·혼합 등 DataLab 미지원)
   const noDataKws = filteredData.filter(d => !d.filteredTrend.length).map(d => d.keyword);
@@ -1617,6 +1703,7 @@ function getScoreColor(score) {
 function destroyAllCharts() {
   if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
   if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
+  if (dowChartInstance)   { dowChartInstance.destroy();   dowChartInstance   = null; }
   Object.values(genderChartInstances).forEach(c => c.destroy());
   genderChartInstances = {};
   Object.values(ageChartInstances).forEach(c => c.destroy());
@@ -1638,6 +1725,10 @@ let trendPeriod = 3;
 let trendDevice = 'all';
 let dailyChartInstance = null;
 let dailyUnitMode = 'daily'; // 'daily' | 'weekly'
+let dowChartInstance   = null;
+let customRangeActive  = false;
+let customStartDate    = null;
+let customEndDate      = null;
 
 const keywordInput   = document.getElementById('keywordInput');
 const keywordTags    = document.getElementById('keywordTags');
@@ -1771,19 +1862,41 @@ async function runRealAnalysis() {
   await sleep(200);
   resetBatchUI();
 
-  // ── /trend 호출 (트렌드 데이터) ─────────────────────────────────────────
+  // ── /trend 호출: UI 선택 기간 + 12개월 전체 병렬 ─────────────────────────
+  // - trendResults: UI 선택 기간 (월간 차트용)
+  // - fullYearTrend: 12개월치 (일간 volume 역산 기준용)
   updateLoadingStatus('트렌드 분석 중...');
-  let trendResults = [];
+  let trendResults  = [];
+  let fullYearTrend = [];
   try {
-    trendResults = await ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice);
+    const [tr, fy] = await Promise.all([
+      ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice),
+      trendPeriod < 12
+        ? ApiClient.fetchTrendData(keywords, 12, 'all')  // 12개월치 별도 취득
+        : Promise.resolve([]),
+    ]);
+    trendResults  = tr;
+    fullYearTrend = fy;
   } catch(e) {
     console.warn('[trend] 실패, 빈 트렌드로 진행:', e.message);
   }
 
-  // ── 결과 병합 (kwResults에 성비/연령비 포함) ──────────────────────────────
+  // ── 결과 병합 ──────────────────────────────────────────────────────────────
   updateLoadingStatus('결과 처리 중...');
   analysisData = mergeApiResults(kwResults, trendResults, {}, keywords);
   rawTrendData = trendResults;
+
+  // trendPeriod < 12 이면 fullYearTrend 로 trendData.all 보완
+  // (일간 역산에서 12개월치 월간 ratio 를 참조하게 함)
+  if (fullYearTrend.length > 0) {
+    fullYearTrend.forEach(r => {
+      const d = analysisData.find(a => a.keyword === r.keyword);
+      if (d) d.trendData._full12 = r.data;  // 별도 키에 보관 (월간 차트에는 영향 없음)
+    });
+  } else {
+    // trendPeriod === 12 이면 trendResults 자체가 12개월치
+    analysisData.forEach(d => { d.trendData._full12 = d.trendData.all; });
+  }
 
   rawDailyTrendData = [];
   setTimeout(() => loadDailyTrendBackground(), 300);
@@ -1871,48 +1984,31 @@ function getDefaultAgeRatio() {
 }
 
 /**
- * Worker(또는 mock)에서 오는 다양한 연령 라벨 형식을
+ * Worker 또는 mock에서 오는 다양한 연령 라벨 형식을
  * [10대, 20대, 30대, 40대, 50대~] 5구간으로 합산·정규화
- *
- * 지원 입력 라벨:
- *   '~12','13~19','20~24','25~29','30~39','40~49','50~'   ← Worker 7구간
- *   '10대','20대','30대','40대','50대','60대+'             ← mock 6구간
- *   이미 5구간('10대','20대','30대','40대','50대~')인 경우 그대로 반환
  */
 function normalizeAgeRatio(raw) {
   if (!raw || !raw.length) return getDefaultAgeRatio();
-
-  // 이미 정규화된 5구간이면 그대로 반환
   const normalLabels = ['10대','20대','30대','40대','50대~'];
   if (raw.length === 5 && raw.every((a, i) => a.label === normalLabels[i])) return raw;
-
-  // 라벨 → 버킷 매핑
   function toBucket(lbl) {
     if (!lbl) return null;
-    if (lbl === '~12' || lbl === '13~19' || lbl === '10대')        return 0; // 10대
-    if (lbl === '20~24' || lbl === '25~29' || lbl === '20대')      return 1; // 20대
-    if (lbl === '30~39' || lbl === '30대')                          return 2; // 30대
-    if (lbl === '40~49' || lbl === '40대')                          return 3; // 40대
-    if (lbl === '50~' || lbl === '50대' || lbl === '60대+')         return 4; // 50대~
+    if (lbl === '~12' || lbl === '13~19' || lbl === '10대')        return 0;
+    if (lbl === '20~24' || lbl === '25~29' || lbl === '20대')      return 1;
+    if (lbl === '30~39' || lbl === '30대')                          return 2;
+    if (lbl === '40~49' || lbl === '40대')                          return 3;
+    if (lbl === '50~' || lbl === '50대' || lbl === '60대+')         return 4;
     return null;
   }
-
   const sums = [0, 0, 0, 0, 0];
   raw.forEach(a => {
     const b = toBucket(a.label);
     if (b !== null) sums[b] += (a.ratio || 0);
   });
-
   const total = sums.reduce((s, v) => s + v, 0) || 100;
   const rounded = sums.map(v => Math.round((v / total) * 100));
-
-  // 반올림 오차 보정 (합계 = 100)
   const diff = 100 - rounded.reduce((s, v) => s + v, 0);
-  if (diff !== 0) {
-    const maxIdx = rounded.indexOf(Math.max(...rounded));
-    rounded[maxIdx] += diff;
-  }
-
+  if (diff !== 0) { const maxIdx = rounded.indexOf(Math.max(...rounded)); rounded[maxIdx] += diff; }
   return normalLabels.map((lbl, i) => ({ label: lbl, ratio: rounded[i] }));
 }
 
@@ -1979,12 +2075,25 @@ async function refreshTrendData() {
     return;
   }
   try {
-    const trendResults = await ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice);
+    // UI 선택 기간 트렌드 + (12개월 미만이면) 12개월치 병렬 취득
+    const [trendResults, fullYr] = await Promise.all([
+      ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice),
+      trendPeriod < 12 ? ApiClient.fetchTrendData(keywords, 12, 'all') : Promise.resolve([]),
+    ]);
     rawTrendData = trendResults;
     trendResults.forEach(r => {
       const d = analysisData.find(a => a.keyword === r.keyword);
       if (d) d.trendData.all = r.data;
     });
+    if (fullYr.length > 0) {
+      fullYr.forEach(r => {
+        const d = analysisData.find(a => a.keyword === r.keyword);
+        if (d) d.trendData._full12 = r.data;
+      });
+    } else {
+      // trendPeriod === 12: trendResults 자체가 12개월치
+      analysisData.forEach(d => { d.trendData._full12 = d.trendData.all; });
+    }
     renderTrendChart(analysisData, trendPeriod, trendDevice);
   } catch (err) {
     resultsSection.style.display = '';
@@ -2020,7 +2129,7 @@ function renderResults() {
   renderTrend();
   renderEfficiency();
   switchTab('overview');
-  // ★ 연관검색어 퀵조회: 입력된 전체 키워드 기준으로 자동 조회 (활성화된 경우)
+  // ★ 연관검색어 퀵조회: 첫 번째 키워드 기준으로 자동 조회 (활성화된 경우)
   if (keywords.length > 0) RelatedSearch.onAnalysisDone(keywords);
 }
 
@@ -2309,6 +2418,7 @@ async function loadDailyTrendBackground() {
     if (readyBadge) readyBadge.style.display = 'inline-flex';
     // 탭이 trend이든 아니든 무조건 렌더 시도 (탭 전환 시에도 보이게)
     renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+    renderDowChart(rawDailyTrendData);
   } catch(e) {
     console.warn('[daily] 실패:', e.message);
     if (loadBadge) loadBadge.style.display = 'none';
@@ -2316,58 +2426,174 @@ async function loadDailyTrendBackground() {
 }
 
 // ── 일간 역산 핵심 함수 ─────────────────────────────────
-// 공식: 일간추정검색량 = (일간ratio / 해당월 일간ratio합계) × 해당월 월간검색량
-// analysisData의 totalSearch(월간검색량)와 월간트렌드 ratio를 함께 활용
+//
+// 네이버 DataLab ratio 특성:
+//   - 월간 ratio: 요청 기간(N달) 내 최고달 = 100 으로 정규화
+//   - 일간 ratio: 요청 기간(365일) 내 최고일 = 100 으로 정규화
+//   → 두 ratio의 스케일이 서로 다름. 직접 곱하면 안 됨.
+//
+// 올바른 공식:
+//   1. 월간 트렌드로 달별 상대 비중 계산 (월간 ratio / 기간 내 합계)
+//      → "이 달은 전체 기간 검색량의 몇 %인가"
+//   2. 전체 기간 총 검색량 추정 = baseSearch × (전체 달 수)
+//      단, baseSearch 는 '현재달'의 실제 검색량이므로
+//      현재달 ratio 기준으로 전체 기간 총량을 역산
+//   3. 달별 검색량 = 달별 비중 × 전체 총량
+//   4. 일간 검색량 = (일간 ratio / 해당달 일간 ratio 합) × 달별 검색량
+//
 function calcDailyVolumes(dailyData, kwAnalysis) {
   if (!dailyData || !dailyData.length) return [];
 
-  // 1) 월별 일간 ratio 합계 계산
-  const monthRatioSum = {}; // { 'YYYY-MM': sumOfDailyRatios }
+  const baseSearch = kwAnalysis.totalSearch || 0;
+
+  // ── STEP 1: 월별 일간 ratio 합계 + 일수 카운트 (일간 분배용) ──
+  const monthRatioSum  = {};
+  const monthDayCount  = {}; // 실제 데이터가 있는 일수
   dailyData.forEach(t => {
     const ym = t.period.substring(0, 7);
-    monthRatioSum[ym] = (monthRatioSum[ym] || 0) + t.ratio;
+    monthRatioSum[ym]  = (monthRatioSum[ym]  || 0) + t.ratio;
+    monthDayCount[ym]  = (monthDayCount[ym]  || 0) + 1;
   });
 
-  // 2) 월별 실제 검색량 매핑
-  //    월간 트렌드 ratio 기준: 가장 최근 달 = totalSearch
-  const monthlyArr = (kwAnalysis.trendData && kwAnalysis.trendData['all']) || [];
-  const baseSearch  = kwAnalysis.totalSearch || 0;
-  const lastMonthRatio = monthlyArr.length
-    ? (monthlyArr[monthlyArr.length - 1].ratio || 1) : 1;
-
-  // 월별 추정 검색량 맵
-  const monthSearchMap = {};
-  monthlyArr.forEach(m => {
-    monthSearchMap[m.period] = Math.round((m.ratio / lastMonthRatio) * baseSearch);
-  });
-  // 월간 트렌드에 없는 달은 baseSearch 기준으로 fallback
+  // 각 달의 실제 일수 (데이터 완전성 체크용)
+  function daysInMonth(ymStr) {
+    const [y, m] = ymStr.split('-').map(Number);
+    return new Date(y, m, 0).getDate();
+  }
+  // 데이터가 절반 이하인 달(첫달/마지막달 등 부분 데이터)은
+  // 일간 ratio 합을 실제 일수 기준으로 보정
+  // → 부분 달의 ratioSum이 작아서 volume 과대추정되는 것 방지
+  const monthRatioSumAdj = {};
   Object.keys(monthRatioSum).forEach(ym => {
-    if (!monthSearchMap[ym]) monthSearchMap[ym] = baseSearch;
+    const actual   = monthDayCount[ym];
+    const expected = daysInMonth(ym);
+    if (actual < expected * 0.8) {
+      // 부분 달: 일평균으로 보정해서 전체 달 기준으로 환산
+      monthRatioSumAdj[ym] = Math.round((monthRatioSum[ym] / actual) * expected);
+    } else {
+      monthRatioSumAdj[ym] = monthRatioSum[ym];
+    }
   });
 
-  // 3) 일간 추정 검색량 계산
+  // ── STEP 2: 월간 트렌드로 달별 검색량 맵 구성 ────────────────
+  const td = kwAnalysis.trendData || {};
+  // _full12(12개월치) 우선, 없으면 trendData.all
+  const monthlyArr = (td._full12 && td._full12.length)
+    ? td._full12
+    : (td.all || []);
+
+  const monthSearchMap = {};
+
+  if (monthlyArr.length > 0) {
+    // 월간 ratio 배열 → { 'YYYY-MM': ratio } 맵
+    const monthRatioMap = {};
+    monthlyArr.forEach(m => { monthRatioMap[m.period] = m.ratio || 0; });
+    const sortedMonths = Object.keys(monthRatioMap).sort();
+
+    // 핵심: 현재달(혹은 월간 배열의 마지막 달)의 ratio로 스케일 기준 설정
+    // → 현재달 ratio / 전체 ratio 합 = 현재달이 차지하는 비중
+    // → 현재달 검색량(baseSearch)을 그 비중으로 나누면 전체 총량 추정
+    const totalMonthlyRatio = sortedMonths.reduce((s, m) => s + (monthRatioMap[m] || 0), 0);
+    const anchorMonth       = sortedMonths[sortedMonths.length - 1]; // 마지막 달
+    const anchorRatio       = monthRatioMap[anchorMonth] || 1;
+    // 현재달 비중 = anchorRatio / totalMonthlyRatio
+    // 전체 기간 총 검색량 = baseSearch / (anchorRatio / totalMonthlyRatio)
+    const totalEstimated = baseSearch > 0
+      ? Math.round(baseSearch * totalMonthlyRatio / anchorRatio)
+      : 0;
+
+    // 달별 검색량 = (해당달 ratio / 전체 ratio 합) × 전체 총량
+    sortedMonths.forEach(ym => {
+      monthSearchMap[ym] = Math.round((monthRatioMap[ym] / totalMonthlyRatio) * totalEstimated);
+    });
+
+    // 월간 트렌드에 없는 달(일간 데이터에는 있는 달) → 인접 달 선형 보간
+    const allDailyMonths = [...new Set(dailyData.map(t => t.period.substring(0, 7)))].sort();
+    allDailyMonths.forEach(ym => {
+      if (monthSearchMap[ym] !== undefined) return;
+      const before = sortedMonths.filter(m => m <= ym).pop();
+      const after  = sortedMonths.filter(m => m >= ym).shift();
+      if (before && after && before !== after) {
+        const d0 = new Date(before + '-01'), d1 = new Date(after + '-01'), d = new Date(ym + '-01');
+        const t  = (d - d0) / (d1 - d0);
+        monthSearchMap[ym] = Math.round(monthSearchMap[before] * (1 - t) + monthSearchMap[after] * t);
+      } else if (before) {
+        monthSearchMap[ym] = monthSearchMap[before];
+      } else if (after) {
+        monthSearchMap[ym] = monthSearchMap[after];
+      } else {
+        monthSearchMap[ym] = baseSearch;
+      }
+    });
+  } else {
+    // 월간 트렌드 없음 → 모든 달에 baseSearch fallback
+    [...new Set(dailyData.map(t => t.period.substring(0, 7)))].forEach(ym => {
+      monthSearchMap[ym] = baseSearch;
+    });
+  }
+
+  // ── STEP 3: 일간 추정 검색량 계산 ───────────────────────────
+  // 공식: (일간 ratio / 해당달 일간 ratio 합보정) × 해당달 월간 검색량
   return dailyData.map(t => {
-    const ym = t.period.substring(0, 7);
-    const ratioSum = monthRatioSum[ym] || 1;
-    const monthSearch = monthSearchMap[ym] || baseSearch;
-    const volume = monthSearch > 0
+    const ym          = t.period.substring(0, 7);
+    const ratioSum    = monthRatioSumAdj[ym] || monthRatioSum[ym] || 1;
+    const monthSearch = monthSearchMap[ym] != null ? monthSearchMap[ym] : baseSearch;
+    const volume      = monthSearch > 0
       ? Math.round((t.ratio / ratioSum) * monthSearch)
       : 0;
     return { ...t, volume };
   });
 }
 
-// ── 7일 이동평균 (주간 스무딩) ──────────────────────────
-function applyWeeklySmoothing(arr, key = 'ratio') {
-  const WINDOW = 7;
-  return arr.map((t, i) => {
-    const start = Math.max(0, i - Math.floor(WINDOW / 2));
-    const end   = Math.min(arr.length - 1, i + Math.floor(WINDOW / 2));
-    const slice = arr.slice(start, end + 1);
-    const avg   = slice.reduce((s, d) => s + (d[key] || 0), 0) / slice.length;
-    return { ...t, [key]: Math.round(avg * 10) / 10 };
+// ── 일간 차트 공통 헬퍼 ─────────────────────────────────
+// X축 라벨: 년도 변경 시점에 'YY년' 표기 추가
+function _buildDailyLabels(periods, isWeekly) {
+  let lastYear = null;
+  return periods.map(p => {
+    const parts = p.split('-');
+    const y = parseInt(parts[0]);
+    const m = parseInt(parts[1]);
+    const d = parseInt(parts[2]);
+    const suffix = isWeekly ? 'W' : '';
+    if (y !== lastYear) {
+      lastYear = y;
+      return `${String(y).slice(2)}년 ${m}/${d}${suffix}`;
+    }
+    return `${m}/${d}${suffix}`;
   });
 }
+// X축 틱 밀도 계산
+function _calcTickStep(totalPts) {
+  if (totalPts > 365) return 60;
+  if (totalPts > 270) return 30;
+  if (totalPts > 150) return 14;
+  if (totalPts > 60)  return 7;
+  return 3;
+}
+
+// ── 주간 집계: 일간 데이터를 ISO 주차(Mon~Sun)별 합계로 집약 ────────────
+function aggregateWeekly(arr) {
+  // ISO 주차 시작(월요일) 계산
+  function getWeekStart(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const day = dt.getDay(); // 0=일, 1=월 ...
+    const diff = (day === 0) ? -6 : 1 - day; // 월요일로 조정
+    const mon = new Date(dt); mon.setDate(dt.getDate() + diff);
+    return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+  }
+  const buckets = {};
+  arr.forEach(t => {
+    const ws = getWeekStart(t.period);
+    if (!buckets[ws]) buckets[ws] = { period: ws, ratio: 0, volume: 0, count: 0 };
+    buckets[ws].ratio  += (t.ratio  || 0);
+    buckets[ws].volume += (t.volume || 0);
+    buckets[ws].count  += 1;
+  });
+  return Object.values(buckets).sort((a, b) => a.period.localeCompare(b.period));
+}
+// (하위호환 유지용 별칭)
+function applyWeeklySmoothing(arr, key = 'ratio') { return arr; }
 
 // ── 일간 트렌드 차트 렌더 ───────────────────────────────
 function renderDailyTrendChart(dailyResults, period) {
@@ -2409,10 +2635,9 @@ function renderDailyTrendChart(dailyResults, period) {
       return new Date(y, m - 1, day) >= cutoff;
     });
 
-    // 주간 스무딩 적용
+    // 주간 집계: 일별 → 주차(Mon-Sun) 합산
     if (isWeekly) {
-      filtered = applyWeeklySmoothing(filtered, 'ratio');
-      filtered = applyWeeklySmoothing(filtered, 'volume');
+      filtered = aggregateWeekly(filtered);
     }
 
     return {
@@ -2431,11 +2656,9 @@ function renderDailyTrendChart(dailyResults, period) {
   canvas.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
 
-  // X축 라벨
-  const labels = filteredResults[0].data.map(t => {
-    const p = t.period.split('-');
-    return `${parseInt(p[1])}/${parseInt(p[2])}`;
-  });
+  // X축 라벨 (년도 변경 시점에 년도 표시)
+  const allPeriods = filteredResults[0].data.map(t => t.period);
+  const labels = _buildDailyLabels(allPeriods, isWeekly);
 
   const datasets = filteredResults.map(d => ({
     label: d.keyword,
@@ -2459,7 +2682,7 @@ function renderDailyTrendChart(dailyResults, period) {
 
   // X축 틱 밀도
   const totalPts = filteredResults[0].data.length;
-  const tickStep = totalPts > 270 ? 30 : totalPts > 150 ? 14 : totalPts > 60 ? 7 : 3;
+  const tickStep = _calcTickStep(totalPts);
 
   dailyChartInstance = new Chart(canvas, {
     type: 'line',
@@ -2481,7 +2704,7 @@ function renderDailyTrendChart(dailyResults, period) {
             },
             label: (ctx) => {
               const v = ctx.parsed.y;
-              const suffix = isWeekly ? ' (7일 평균)' : '';
+              const suffix = isWeekly ? ' (주간 합계)' : '';
               return isVolume
                 ? `  ${ctx.dataset.label}: 약 ${formatNumber(Math.round(v))}회${suffix}`
                 : `  ${ctx.dataset.label}: ${v}${suffix}`;
@@ -2525,6 +2748,325 @@ function renderDailyTrendChart(dailyResults, period) {
   }
 }
 
+
+// ── 기간 직접 지정 ─────────────────────────────────────
+async function applyCustomRange() {
+  const sInput = document.getElementById('customStartDate');
+  const eInput = document.getElementById('customEndDate');
+  const sVal = sInput?.value;
+  const eVal = eInput?.value;
+  if (!sVal || !eVal) { showToast('시작일과 종료일을 모두 선택해 주세요.', 'error'); return; }
+  if (sVal >= eVal) { showToast('종료일은 시작일보다 이후여야 합니다.', 'error'); return; }
+
+  customRangeActive = true;
+  customStartDate   = sVal;
+  customEndDate     = eVal;
+
+  // 기간 버튼 active 해제
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+
+  // 초기화 버튼 표시
+  const resetBtn = document.getElementById('btnResetRange');
+  if (resetBtn) resetBtn.style.display = '';
+
+  if (!analysisData.length) return;
+
+  const applyBtn = document.getElementById('btnApplyRange');
+  if (applyBtn) { applyBtn.disabled = true; applyBtn.textContent = '조회 중...'; }
+
+  try {
+    // ── 월간 트렌드: 커스텀 기간 API 호출 ──
+    if (isApiMode()) {
+      try {
+        const trendResults = await ApiClient.fetchTrendDataCustom(keywords, customStartDate, customEndDate, trendDevice);
+        trendResults.forEach(r => {
+          const d = analysisData.find(a => a.keyword === r.keyword);
+          if (d) {
+            d.trendData.all    = r.data;
+            d.trendData._full12 = r.data; // 일간 역산 기준으로도 사용
+          }
+        });
+      } catch(e) { console.warn('[custom-trend] 월간 트렌드 오류:', e.message); }
+    }
+    renderTrendChart(analysisData, null, trendDevice, { start: customStartDate, end: customEndDate });
+
+    // ── 일간 트렌드: 커스텀 기간으로 API 재호출 ──
+    // (네이버 DataLab 일간은 최대 1년이므로 내부에서 클램핑)
+    const loadBadge  = document.getElementById('dailyLoadingBadge');
+    const readyBadge = document.getElementById('dailyReadyBadge');
+    if (loadBadge)  { loadBadge.style.display = 'inline-flex'; }
+    if (readyBadge) { readyBadge.style.display = 'none'; }
+
+    // 캔버스 숨기고 빈 상태로
+    const dailyCanvas = document.getElementById('dailyTrendChart');
+    const dailyEmpty  = document.getElementById('dailyEmpty');
+    if (dailyCanvas) dailyCanvas.style.display = 'none';
+    if (dailyEmpty)  dailyEmpty.style.display = 'flex';
+    if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
+
+    if (isApiMode() && keywords.length > 0) {
+      try {
+        const customDailyData = await ApiClient.fetchDailyTrendDataCustom(keywords, customStartDate, customEndDate);
+        // 커스텀 일간 데이터를 별도 변수에 저장 (rawDailyTrendData는 1년치 캐시 유지)
+        if (loadBadge)  loadBadge.style.display = 'none';
+        if (readyBadge) readyBadge.style.display = 'inline-flex';
+        renderDailyTrendChartCustom(customDailyData, customStartDate, customEndDate);
+        renderDowChart(customDailyData);
+      } catch(e) {
+        console.warn('[custom-daily] 일간 트렌드 오류:', e.message);
+        if (loadBadge) loadBadge.style.display = 'none';
+        showToast('일간 트렌드 조회 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    showToast(`📅 ${sVal} ~ ${eVal} 기간으로 설정되었습니다.`, 'success');
+  } finally {
+    if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = '적용'; }
+  }
+}
+
+function resetCustomRange() {
+  customRangeActive = false;
+  customStartDate   = null;
+  customEndDate     = null;
+  // 기본 3개월 active 복원
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === String(trendPeriod));
+  });
+  const resetBtn = document.getElementById('btnResetRange');
+  if (resetBtn) resetBtn.style.display = 'none';
+  if (!analysisData.length) return;
+  refreshTrendData();
+  if (rawDailyTrendData.length > 0) renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+  if (rawDailyTrendData.length > 0) renderDowChart(rawDailyTrendData);
+  showToast('기간 직접 지정이 초기화되었습니다.', 'success');
+}
+
+// 커스텀 날짜 범위로 일간 차트 렌더 (기존 renderDailyTrendChart 변형)
+function renderDailyTrendChartCustom(dailyResults, startDate, endDate) {
+  const canvas  = document.getElementById('dailyTrendChart');
+  const emptyEl = document.getElementById('dailyEmpty');
+  if (!canvas) return;
+  const hasData = dailyResults && dailyResults.length > 0
+    && dailyResults.some(d => d.data && d.data.length > 0);
+  if (!hasData) { canvas.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'flex'; return; }
+
+  const cutoffStart = new Date(startDate);
+  const cutoffEnd   = new Date(endDate);
+  const isVolume = (trendViewMode === 'volume');
+  const isWeekly = (dailyUnitMode === 'weekly');
+  if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
+
+  const filteredResults = dailyResults.map(d => {
+    const kwData = analysisData.find(
+      a => (a.keyword || '').toLowerCase().trim() === (d.keyword || '').toLowerCase().trim()
+    ) || {};
+    const withVolume = calcDailyVolumes(d.data || [], kwData);
+    let filtered = withVolume.filter(t => {
+      if (!t.period || t.period.length < 10) return false;
+      const dt = new Date(t.period);
+      return dt >= cutoffStart && dt <= cutoffEnd;
+    });
+    if (isWeekly) filtered = aggregateWeekly(filtered);
+    return { keyword: d.keyword, color: kwData.color || '#4F46E5', data: filtered };
+  }).filter(d => d.data.length > 0);
+
+  if (!filteredResults.length) {
+    canvas.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'flex'; return;
+  }
+  canvas.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const labels = _buildDailyLabels(filteredResults[0].data.map(t => t.period), isWeekly);
+  const datasets = filteredResults.map(d => ({
+    label: d.keyword,
+    data: isVolume ? d.data.map(t => t.volume) : d.data.map(t => t.ratio),
+    borderColor: d.color, backgroundColor: d.color + '12',
+    borderWidth: isWeekly ? 2 : 1.5, pointRadius: 0, pointHoverRadius: 5,
+    pointBackgroundColor: d.color, pointBorderColor: '#fff', pointBorderWidth: 1.5,
+    fill: filteredResults.length === 1, tension: isWeekly ? 0.4 : 0.25
+  }));
+  const allVals = datasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v) && v > 0);
+  const maxVal  = allVals.length ? Math.max(...allVals) : (isVolume ? 1000 : 100);
+  const yMax    = isVolume
+    ? Math.ceil(maxVal * 1.25 / 100) * 100 || 100
+    : Math.min(100, Math.ceil(maxVal * 1.25 / 10) * 10 || 100);
+  const totalPts = filteredResults[0].data.length;
+  const tickStep = _calcTickStep(totalPts);
+
+  dailyChartInstance = new Chart(canvas, {
+    type: 'line', data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,23,42,.92)',
+          titleFont: { ...BASE_FONT, size: 11, weight: '600' },
+          bodyFont:  { ...BASE_FONT, size: 11 },
+          padding: 8, cornerRadius: 8,
+          callbacks: {
+            title: (items) => filteredResults[0].data[items[0].dataIndex]?.period || items[0].label,
+            label: (ctx) => {
+              const v = ctx.parsed.y;
+              const suffix = isWeekly ? ' (주간 합계)' : '';
+              return isVolume
+                ? `  ${ctx.dataset.label}: 약 ${formatNumber(Math.round(v))}회${suffix}`
+                : `  ${ctx.dataset.label}: ${v}${suffix}`;
+            }
+          }
+        },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: '#F1F5F9', drawBorder: false }, border: { display: false },
+          ticks: { font: { ...BASE_FONT, size: 10 }, color: '#94A3B8', maxRotation: 0,
+            callback: (val, idx) => idx % tickStep === 0 ? labels[idx] : '' }
+        },
+        y: {
+          min: 0, max: yMax,
+          grid: { color: '#F1F5F9', drawBorder: false }, border: { display: false },
+          ticks: { font: BASE_FONT, color: '#94A3B8', maxTicksLimit: 5,
+            callback: (v) => isVolume ? formatVolumeShort(v) : v }
+        }
+      }
+    }
+  });
+  const legendEl = document.getElementById('dailyTrendLegend');
+  if (legendEl) {
+    legendEl.innerHTML = filteredResults.map(d => `
+      <div class="trend-legend-item">
+        <div class="trend-legend-line" style="background:${d.color}"></div>
+        <span>${d.keyword}</span>
+      </div>`).join('');
+  }
+}
+
+// ── renderTrendChart: 커스텀 날짜 범위 지원 오버로드 ─────
+// 기존 renderTrendChart 는 period(months) 기반이므로,
+// dateRange = { start, end } 를 넘기면 cutoff 대신 직접 필터링
+const _origRenderTrendChart = typeof renderTrendChart === 'function' ? renderTrendChart : null;
+
+// ── 요일별 검색 비율 차트 ───────────────────────────────
+function renderDowChart(dailyResults) {
+  const canvas  = document.getElementById('dowChart');
+  const emptyEl = document.getElementById('dowEmpty');
+  if (!canvas) return;
+
+  const hasData = dailyResults && dailyResults.length > 0
+    && dailyResults.some(d => d.data && d.data.length > 0);
+  if (!hasData) {
+    canvas.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'flex';
+    return;
+  }
+
+  if (dowChartInstance) { dowChartInstance.destroy(); dowChartInstance = null; }
+
+  const DOW_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
+  // 요일별 ratio 합산 + 카운트
+  const kwResults = dailyResults.map(d => {
+    const kwData = analysisData.find(
+      a => (a.keyword || '').toLowerCase().trim() === (d.keyword || '').toLowerCase().trim()
+    ) || {};
+    const sums   = [0, 0, 0, 0, 0, 0, 0];
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    (d.data || []).forEach(t => {
+      if (!t.period || t.period.length < 10) return;
+      const [y, mo, dy] = t.period.split('-').map(Number);
+      const dt  = new Date(y, mo - 1, dy);
+      let   dow = dt.getDay(); // 0=일, 1=월 ...
+      // 0(일) → index 6, 1(월) → 0 ... 6(토) → 5
+      const idx = dow === 0 ? 6 : dow - 1;
+      sums[idx]   += (t.ratio || 0);
+      counts[idx] += 1;
+    });
+    // 평균 비율
+    const avgs = sums.map((s, i) => counts[i] > 0 ? s / counts[i] : 0);
+    // 피크=100 으로 정규화
+    const peak = Math.max(...avgs) || 1;
+    const normalized = avgs.map(v => Math.round((v / peak) * 100));
+    return {
+      keyword: d.keyword,
+      color: kwData.color || '#4F46E5',
+      data: normalized
+    };
+  }).filter(r => r.data.some(v => v > 0));
+
+  if (!kwResults.length) {
+    canvas.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'flex';
+    return;
+  }
+
+  canvas.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const datasets = kwResults.map((r, ri) => ({
+    label: r.keyword,
+    data: r.data,
+    backgroundColor: r.color + (kwResults.length > 1 ? 'CC' : 'DD'),
+    borderColor: r.color,
+    borderWidth: 1.5,
+    borderRadius: 6,
+    borderSkipped: false,
+  }));
+
+  dowChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: { labels: DOW_LABELS, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,23,42,.92)',
+          titleFont: { ...BASE_FONT, size: 12, weight: '700' },
+          bodyFont:  { ...BASE_FONT, size: 11 },
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            title: (items) => `${DOW_LABELS[items[0].dataIndex]}요일`,
+            label: (ctx) => `  ${ctx.dataset.label}: ${ctx.parsed.y} (피크 대비 %)`
+          }
+        },
+        datalabels: {
+          display: true,
+          anchor: 'end', align: 'end',
+          color: '#64748B',
+          font: { ...BASE_FONT, size: 10, weight: '600' },
+          formatter: (v) => v > 0 ? v : ''
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false }, border: { display: false },
+          ticks: { font: { ...BASE_FONT, size: 13, weight: '700' }, color: '#374151' }
+        },
+        y: {
+          min: 0, max: 110,
+          grid: { color: '#F1F5F9', drawBorder: false }, border: { display: false },
+          ticks: {
+            font: BASE_FONT, color: '#94A3B8', maxTicksLimit: 5,
+            callback: (v) => v + '%'
+          }
+        }
+      }
+    }
+  });
+
+  // 범례
+  const legendEl = document.getElementById('dowLegend');
+  if (legendEl) {
+    legendEl.innerHTML = kwResults.map(r => `
+      <div class="trend-legend-item">
+        <div class="trend-legend-line" style="background:${r.color}"></div>
+        <span>${r.keyword}</span>
+      </div>`).join('');
+  }
+}
 
 // 트렌드 뷰 토글 (비율 ↔ 검색량) — 월간 + 일간 동시 업데이트
 
@@ -2775,7 +3317,6 @@ const RelatedSearch = (function() {
     const header = document.createElement('div');
     header.className = 'related-row related-header';
 
-    // 순위 열 헤더 (연관도 정렬 토글)
     const relOrderBtn = document.createElement('span');
     relOrderBtn.className = 'related-col-sort' + (_sortKey === 'relOrder' ? ' active' + (_sortDir === 'asc' ? ' asc' : '') : '');
     relOrderBtn.innerHTML = '# <i class="fa-solid fa-arrow-up sort-arrow"></i>';
@@ -2783,12 +3324,10 @@ const RelatedSearch = (function() {
     relOrderBtn.addEventListener('click', function() { _onSortClick('relOrder'); });
     header.appendChild(relOrderBtn);
 
-    // 키워드 열 헤더 (고정)
     const kwHeader = document.createElement('span');
     kwHeader.textContent = '키워드';
     header.appendChild(kwHeader);
 
-    // 검색량 3개 정렬 가능 헤더
     sortableCols.forEach(function(col) {
       const span = document.createElement('span');
       span.style.textAlign = 'right';
@@ -2806,12 +3345,10 @@ const RelatedSearch = (function() {
       const row = document.createElement('div');
       row.className = 'related-row';
 
-      // 순위
       const rankEl = document.createElement('span');
       rankEl.className = 'related-rank' + (item.relOrder < 3 ? ' top3' : '');
       rankEl.textContent = globalRank;
 
-      // 키워드
       const kwEl = document.createElement('span');
       kwEl.className = 'related-kw';
       kwEl.textContent = item.keyword;
@@ -2820,17 +3357,14 @@ const RelatedSearch = (function() {
         if (typeof addKeyword === 'function') addKeyword(item.keyword);
       });
 
-      // 총 검색량 (숫자만, 바 없음)
       const volEl = document.createElement('span');
       volEl.className = 'related-vol-num';
       volEl.textContent = _fmtNum(item.totalSearch);
 
-      // PC
       const pcEl = document.createElement('span');
       pcEl.className = 'related-sub-num';
       pcEl.textContent = _fmtNum(item.pcSearch);
 
-      // 모바일
       const moEl = document.createElement('span');
       moEl.className = 'related-sub-num';
       moEl.textContent = _fmtNum(item.mobileSearch);
@@ -2917,13 +3451,11 @@ const RelatedSearch = (function() {
   }
 
   // ── 포맷 헬퍼 ────────────────────────────────────────────────────────────
-  // _fmt: 만 단위 약식 (내부 호환용 유지)
   function _fmt(n) {
     if (!n && n !== 0) return '-';
     if (n >= 10000) return (n / 10000).toFixed(1) + '만';
     return n.toLocaleString('ko-KR');
   }
-  // _fmtNum: 실제 숫자 표기 (1,234,567)
   function _fmtNum(n) {
     if (!n && n !== 0) return '-';
     return n.toLocaleString('ko-KR');
@@ -2962,8 +3494,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const notice = document.getElementById('trendVolumeNotice');
     if (notice) notice.style.display = (view === 'volume') ? 'flex' : 'none';
     if (analysisData.length > 0) {
-      renderTrendChart(analysisData, trendPeriod, trendDevice);
-      if (rawDailyTrendData.length > 0) renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+      if (customRangeActive && customStartDate && customEndDate) {
+        // 커스텀 기간이 활성화된 경우
+        renderTrendChart(analysisData, null, trendDevice, { start: customStartDate, end: customEndDate });
+        if (rawDailyTrendData.length > 0) renderDailyTrendChartCustom(rawDailyTrendData, customStartDate, customEndDate);
+      } else {
+        renderTrendChart(analysisData, trendPeriod, trendDevice);
+        if (rawDailyTrendData.length > 0) renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+      }
     }
   });
 
@@ -2975,12 +3513,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (unit === dailyUnitMode) return;
     dailyUnitMode = unit;
     document.querySelectorAll('.daily-unit-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === unit));
-    if (rawDailyTrendData.length > 0) renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+    if (rawDailyTrendData.length > 0) {
+      if (customRangeActive && customStartDate && customEndDate) {
+        renderDailyTrendChartCustom(rawDailyTrendData, customStartDate, customEndDate);
+      } else {
+        renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+      }
+    }
   });
 });
 
 document.querySelectorAll('.period-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
+    // 커스텀 기간 비활성화
+    customRangeActive = false; customStartDate = null; customEndDate = null;
+    const resetBtn = document.getElementById('btnResetRange');
+    if (resetBtn) resetBtn.style.display = 'none';
     trendPeriod = parseInt(btn.dataset.period);
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -2988,6 +3536,7 @@ document.querySelectorAll('.period-btn').forEach(btn => {
       await refreshTrendData();
       // 일간 차트는 슬라이싱만 — 추가 API 호출 없음
       if (rawDailyTrendData.length > 0) renderDailyTrendChart(rawDailyTrendData, trendPeriod);
+      if (rawDailyTrendData.length > 0) renderDowChart(rawDailyTrendData);
     }
   });
 });
@@ -3056,12 +3605,10 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
    엑셀(CSV) 다운로드 유틸리티
 ===================================================== */
 function csvDownload(filename, rows) {
-  // rows: [ ['헤더1','헤더2',...], ['값1','값2',...], ... ]
-  const BOM = '\uFEFF'; // 한글 깨짐 방지 UTF-8 BOM
+  const BOM = '\uFEFF';
   const csv = BOM + rows.map(row =>
     row.map(cell => {
       const s = String(cell == null ? '' : cell);
-      // 콤마, 줄바꿈, 따옴표 포함 시 따옴표로 감싸기
       return /[,\n"]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }).join(',')
   ).join('\r\n');
@@ -3076,46 +3623,26 @@ function csvDownload(filename, rows) {
 function downloadTargetExcel() {
   if (!analysisData || !analysisData.length) { showToast('분석 데이터가 없습니다.', 'error'); return; }
   const today = new Date().toISOString().slice(0, 10);
-
-  // 시트 1: 성별/연령 요약
   const rows = [['키워드', '총 검색량', 'PC 검색량', 'PC 비율(%)', '모바일 검색량', '모바일 비율(%)',
                   '남성 비율(%)', '여성 비율(%)', '경쟁도', '효율 점수']];
   analysisData.forEach(d => {
-    rows.push([
-      d.keyword,
-      d.totalSearch || 0,
-      d.pcSearch || 0,
-      d.pcRatio || 0,
-      d.mobileSearch || 0,
-      d.mobileRatio || 0,
-      d.maleRatio || 0,
-      d.femaleRatio || 0,
-      d.competitionLabel || '',
-      d.efficiencyScore || 0
-    ]);
+    rows.push([d.keyword, d.totalSearch||0, d.pcSearch||0, d.pcRatio||0, d.mobileSearch||0, d.mobileRatio||0,
+               d.maleRatio||0, d.femaleRatio||0, d.competitionLabel||'', d.efficiencyScore||0]);
   });
-
-  // 빈 줄 + 연령대 섹션
   rows.push([]);
   rows.push(['[연령대 분포]']);
   const ageLabels = (analysisData[0]?.ageRatio || []).map(a => a.label);
   rows.push(['키워드', ...ageLabels.map(l => l + '(%)')]);
   analysisData.forEach(d => {
-    const ageVals = ageLabels.map(lbl => {
-      const a = (d.ageRatio || []).find(x => x.label === lbl);
-      return a ? a.ratio : 0;
-    });
+    const ageVals = ageLabels.map(lbl => { const a = (d.ageRatio||[]).find(x=>x.label===lbl); return a?a.ratio:0; });
     rows.push([d.keyword, ...ageVals]);
   });
-
-  // CTR 섹션
   rows.push([]);
   rows.push(['[클릭 효율]']);
   rows.push(['키워드', 'PC CTR(%)', 'PC 예상클릭', '모바일 CTR(%)', '모바일 예상클릭']);
   analysisData.forEach(d => {
-    rows.push([d.keyword, d.pcCtr || 0, d.pcClicks || 0, d.moCtr || 0, d.moClicks || 0]);
+    rows.push([d.keyword, d.pcCtr||0, d.pcClicks||0, d.moCtr||0, d.moClicks||0]);
   });
-
   const kwStr = analysisData.map(d => d.keyword).join('_');
   csvDownload(`타겟분석_${kwStr}_${today}.csv`, rows);
   showToast('타겟 분석 엑셀이 다운로드되었습니다.', 'success');
@@ -3124,129 +3651,71 @@ function downloadTargetExcel() {
 // 0-b) 타겟 분석 PDF 다운로드
 async function downloadTargetPDF() {
   if (!analysisData || !analysisData.length) { showToast('분석 데이터가 없습니다.', 'error'); return; }
-
   const btn = document.querySelector('.btn-pdf-download');
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 생성 중...'; }
-
   try {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW = 210;
-    const margin = 12;
+    const pageW = 210; const margin = 12;
     const today = new Date().toLocaleDateString('ko-KR');
-
-    // PDF 커버 페이지
     pdf.setFillColor(15, 23, 42);
     pdf.rect(0, 0, pageW, 40, 'F');
     pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(18);
-    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(18); pdf.setFont('helvetica', 'bold');
     pdf.text('KeywordLens - Target Analysis', margin, 20);
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Generated: ${today}  |  Keywords: ${analysisData.map(d => d.keyword).join(', ')}`, margin, 32);
-
+    pdf.setFontSize(10); pdf.setFont('helvetica', 'normal');
+    pdf.text(`Generated: ${today}  |  Keywords: ${analysisData.map(d=>d.keyword).join(', ')}`, margin, 32);
     let yPos = 50;
-
-    // 각 키워드별 데이터 테이블
     analysisData.forEach((d, idx) => {
       if (yPos > 240) { pdf.addPage(); yPos = 15; }
-
-      // 키워드 헤더
       pdf.setFillColor(3, 199, 90);
       pdf.rect(margin, yPos, pageW - margin * 2, 8, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`[${idx + 1}] ${d.keyword}`, margin + 3, yPos + 5.5);
+      pdf.setTextColor(255, 255, 255); pdf.setFontSize(11); pdf.setFont('helvetica', 'bold');
+      pdf.text(`[${idx+1}] ${d.keyword}`, margin + 3, yPos + 5.5);
       yPos += 12;
-
-      // 기본 검색량 정보
-      pdf.setTextColor(30, 30, 30);
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
-      const info1 = `총 검색량: ${(d.totalSearch || 0).toLocaleString()}  |  PC: ${(d.pcSearch || 0).toLocaleString()} (${d.pcRatio}%)  |  모바일: ${(d.mobileSearch || 0).toLocaleString()} (${d.mobileRatio}%)`;
-      pdf.text(info1, margin, yPos);
-      yPos += 6;
-
-      const info2 = `경쟁도: ${d.competitionLabel || '-'}  |  효율 점수: ${d.efficiencyScore || 0}  |  남성: ${d.maleRatio}%  |  여성: ${d.femaleRatio}%`;
-      pdf.text(info2, margin, yPos);
-      yPos += 6;
-
-      // 연령대 분포
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('연령대 분포:', margin, yPos);
-      pdf.setFont('helvetica', 'normal');
-      const ageTxt = (d.ageRatio || []).map(a => `${a.label}:${a.ratio}%`).join('  ');
-      pdf.text(ageTxt, margin + 22, yPos);
-      yPos += 6;
-
-      // CTR
-      const info3 = `PC CTR: ${d.pcCtr || 0}%  /  PC 예상클릭: ${(d.pcClicks || 0).toLocaleString()}  |  MO CTR: ${d.moCtr || 0}%  /  MO 예상클릭: ${(d.moClicks || 0).toLocaleString()}`;
-      pdf.text(info3, margin, yPos);
-      yPos += 10;
-
-      // 구분선
-      pdf.setDrawColor(220, 220, 220);
-      pdf.line(margin, yPos - 4, pageW - margin, yPos - 4);
+      pdf.setTextColor(30,30,30); pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
+      pdf.text(`총 검색량: ${(d.totalSearch||0).toLocaleString()}  |  PC: ${(d.pcSearch||0).toLocaleString()} (${d.pcRatio}%)  |  모바일: ${(d.mobileSearch||0).toLocaleString()} (${d.mobileRatio}%)`, margin, yPos); yPos+=6;
+      pdf.text(`경쟁도: ${d.competitionLabel||'-'}  |  효율 점수: ${d.efficiencyScore||0}  |  남성: ${d.maleRatio}%  |  여성: ${d.femaleRatio}%`, margin, yPos); yPos+=6;
+      pdf.setFont('helvetica','bold'); pdf.text('연령대:', margin, yPos); pdf.setFont('helvetica','normal');
+      pdf.text((d.ageRatio||[]).map(a=>`${a.label}:${a.ratio}%`).join('  '), margin+16, yPos); yPos+=6;
+      pdf.text(`PC CTR: ${d.pcCtr||0}%  /  예상클릭: ${(d.pcClicks||0).toLocaleString()}  |  MO CTR: ${d.moCtr||0}%  /  예상클릭: ${(d.moClicks||0).toLocaleString()}`, margin, yPos); yPos+=10;
+      pdf.setDrawColor(220,220,220); pdf.line(margin, yPos-4, pageW-margin, yPos-4);
     });
-
-    // 타겟 차트 섹션 캡처 (차트 시각화 포함)
     const targetEl = document.getElementById('targetCharts');
     if (targetEl) {
       try {
         if (yPos > 180) { pdf.addPage(); yPos = 15; }
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(30, 30, 30);
-        pdf.text('Chart Visualization (Current Keyword)', margin, yPos);
-        yPos += 5;
-
-        const canvas = await html2canvas(targetEl, {
-          scale: 1.5,
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          logging: false
-        });
+        pdf.setFontSize(12); pdf.setFont('helvetica','bold'); pdf.setTextColor(30,30,30);
+        pdf.text('Chart Visualization (Current Keyword)', margin, yPos); yPos += 5;
+        const canvas = await html2canvas(targetEl, { scale:1.5, backgroundColor:'#ffffff', useCORS:true, logging:false });
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
         const imgW = pageW - margin * 2;
         const imgH = (canvas.height / canvas.width) * imgW;
-        const availH = 297 - yPos - 10;
-        const finalH = Math.min(imgH, availH);
+        const finalH = Math.min(imgH, 297 - yPos - 10);
         pdf.addImage(imgData, 'JPEG', margin, yPos, imgW, finalH);
-      } catch (e) {
-        console.warn('차트 캡처 실패:', e);
-      }
+      } catch(e) { console.warn('차트 캡처 실패:', e); }
     }
-
-    const kwStr = analysisData.map(d => d.keyword).join('_');
-    const today2 = new Date().toISOString().slice(0, 10);
+    const kwStr = analysisData.map(d=>d.keyword).join('_');
+    const today2 = new Date().toISOString().slice(0,10);
     pdf.save(`타겟분석_${kwStr}_${today2}.pdf`);
     showToast('PDF가 다운로드되었습니다.', 'success');
-  } catch (e) {
+  } catch(e) {
     console.error('PDF 생성 오류:', e);
     showToast('PDF 생성 중 오류가 발생했습니다.', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> PDF'; }
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-file-pdf"></i> PDF'; }
   }
 }
 
 // 1) 연관검색어 전체 다운로드
 function downloadRelatedExcel() {
-  const data = RelatedSearch.getAllData(); // _data 전체 반환
+  const data = RelatedSearch.getAllData();
   if (!data || !data.length) { showToast('다운로드할 데이터가 없습니다.', 'error'); return; }
   const allKws = RelatedSearch.getKeywords ? RelatedSearch.getKeywords() : [];
   const baseKw = allKws.length > 0 ? allKws.join('_') : (RelatedSearch.getBaseKw() || '연관검색어');
   const rows = [['순위', '키워드', '총 검색량', 'PC 검색량', '모바일 검색량', '기준 키워드']];
-  data.forEach((item, i) => {
-    rows.push([
-      item.relOrder + 1,
-      item.keyword,
-      item.totalSearch || 0,
-      item.pcSearch    || 0,
-      item.mobileSearch || 0,
-      item.sourceKw || ''
-    ]);
+  data.forEach((item) => {
+    rows.push([item.relOrder+1, item.keyword, item.totalSearch||0, item.pcSearch||0, item.mobileSearch||0, item.sourceKw||'']);
   });
   const today = new Date().toISOString().slice(0, 10);
   const safeKw = baseKw.replace(/[^a-zA-Z0-9가-힣_]/g, '_').slice(0, 40);
@@ -3254,27 +3723,21 @@ function downloadRelatedExcel() {
   showToast('연관검색어 엑셀이 다운로드되었습니다.', 'success');
 }
 
-// 2) 월간 검색 트렌드 다운로드
 function downloadMonthlyTrendExcel() {
   if (!analysisData || !analysisData.length) { showToast('트렌드 데이터가 없습니다.', 'error'); return; }
   const isVolume = (trendViewMode === 'volume');
   const now = new Date();
   const cutoff = new Date(now.getFullYear(), now.getMonth() - trendPeriod + 1, 1);
-
-  // 모든 키워드의 기간 합집합 수집
   const periodSet = new Set();
   analysisData.forEach(d => {
-    const trend = (d.trendData[trendDevice] || []).filter(t => {
+    (d.trendData[trendDevice] || []).filter(t => {
       const [y, m] = t.period.split('-').map(Number);
       return new Date(y, m - 1, 1) >= cutoff;
-    });
-    trend.forEach(t => periodSet.add(t.period));
+    }).forEach(t => periodSet.add(t.period));
   });
   const periods = [...periodSet].sort();
-
   const header = ['기간', ...analysisData.map(d => d.keyword + (isVolume ? '_검색량(추정)' : '_비율(%)'))];
   const rows = [header];
-
   periods.forEach(period => {
     const row = [period];
     analysisData.forEach(d => {
@@ -3288,26 +3751,19 @@ function downloadMonthlyTrendExcel() {
         const withVol = estimateVolumeFromTrend(trend, d.totalSearch);
         const vt = withVol.find(t => t.period === period);
         row.push(vt ? vt.volume : 0);
-      } else {
-        row.push(pt.ratio);
-      }
+      } else { row.push(pt.ratio); }
     });
     rows.push(row);
   });
-
   const today = new Date().toISOString().slice(0, 10);
-  const kwStr = analysisData.map(d => d.keyword).join('_');
-  csvDownload(`월간트렌드_${kwStr}_${today}.csv`, rows);
+  csvDownload(`월간트렌드_${analysisData.map(d => d.keyword).join('_')}_${today}.csv`, rows);
 }
 
-// 3) 일간 검색 트렌드 다운로드
 function downloadDailyTrendExcel() {
   if (!rawDailyTrendData || !rawDailyTrendData.length) { showToast('일간 트렌드 데이터가 없습니다.', 'error'); return; }
   const isVolume = (trendViewMode === 'volume');
   const now = new Date();
   const cutoff = new Date(now.getFullYear(), now.getMonth() - trendPeriod + 1, 1);
-
-  // 기간별 데이터 수집
   const periodSet = new Set();
   rawDailyTrendData.forEach(d => {
     (d.data || []).forEach(t => {
@@ -3317,10 +3773,8 @@ function downloadDailyTrendExcel() {
     });
   });
   const periods = [...periodSet].sort();
-
   const header = ['날짜', ...rawDailyTrendData.map(d => d.keyword + (isVolume ? '_검색량(추정)' : '_비율(%)'))];
   const rows = [header];
-
   periods.forEach(period => {
     const row = [period];
     rawDailyTrendData.forEach(d => {
@@ -3331,10 +3785,8 @@ function downloadDailyTrendExcel() {
     });
     rows.push(row);
   });
-
   const today = new Date().toISOString().slice(0, 10);
-  const kwStr = rawDailyTrendData.map(d => d.keyword).join('_');
-  csvDownload(`일간트렌드_${kwStr}_${today}.csv`, rows);
+  csvDownload(`일간트렌드_${rawDailyTrendData.map(d => d.keyword).join('_')}_${today}.csv`, rows);
 }
 
 /* Init */
