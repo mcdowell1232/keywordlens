@@ -1007,7 +1007,7 @@ body {
         </div>
         <div class="trend-daily-notice">
           <i class="fa-solid fa-circle-info"></i>
-          <span>일간 트렌드는 분석 시작 시 <strong>1년치 데이터를 미리 로드</strong>합니다. 기간 필터 변경 시 추가 API 호출 없이 즉시 반영됩니다. 검색량은 <strong>일간 비율 ÷ 월간 비율 합계 × 월간 검색량</strong>으로 역산한 추정치입니다.</span>
+          <span>일간 트렌드는 분석 시작 시 <strong>최근 1년치(365일) 전체를 로드하여 표시</strong>합니다. 검색량은 <strong>로보락 2026-02 기준 scale</strong>으로 환산한 절대 추정치입니다.</span>
         </div>
         <div class="trend-chart-wrap" id="dailyChartWrap">
           <div class="daily-empty" id="dailyEmpty">
@@ -2676,44 +2676,84 @@ function renderDailyTrendChart(dailyResults, period) {
     return;
   }
 
-  // 기간 필터 cutoff
-  const now    = new Date();
-  const cutoff = new Date(now.getFullYear(), now.getMonth() - period + 1, 1);
-
   const isVolume = (trendViewMode === 'volume');
   const isWeekly = (dailyUnitMode === 'weekly');
 
   if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
 
-  // 키워드별 처리
-  const filteredResults = dailyResults.map(d => {
+  // ── 키워드별 volume 계산 (기간 필터 없이 전체 1년) ──
+  const kwWithVolume = dailyResults.map(d => {
     const kwData = analysisData.find(
       a => (a.keyword || '').toLowerCase().trim() === (d.keyword || '').toLowerCase().trim()
     ) || {};
-
-    // 1년치 전체에서 volume 역산
     const withVolume = calcDailyVolumes(d.data || [], kwData);
+    return { keyword: d.keyword, color: kwData.color || '#4F46E5', data: withVolume };
+  });
 
-    // 기간 필터
-    let filtered = withVolume.filter(t => {
-      if (!t.period || t.period.length < 10) return false;
-      const [y, m, day] = t.period.split('-').map(Number);
-      return new Date(y, m - 1, day) >= cutoff;
+  // ── 모든 키워드의 period를 합집합(union)으로 X축 구성 ──
+  // 키워드마다 데이터 시작/끝이 다를 수 있으므로 전체 union 기준
+  const allPeriodsSet = new Set();
+  kwWithVolume.forEach(d => d.data.forEach(t => {
+    if (t.period && t.period.length >= 10) allPeriodsSet.add(t.period);
+  }));
+  const allPeriodsUnion = [...allPeriodsSet].sort(); // YYYY-MM-DD 정렬
+
+  if (!allPeriodsUnion.length) {
+    canvas.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'flex';
+    return;
+  }
+
+  // ── 주간 집계 모드 ──
+  let displayPeriods = allPeriodsUnion;
+  let kwDisplayData  = kwWithVolume;
+
+  if (isWeekly) {
+    // 주간 집계: 각 키워드별로 수행 후 union 재구성
+    kwDisplayData = kwWithVolume.map(d => ({
+      ...d,
+      data: aggregateWeekly(d.data)
+    }));
+    const weekSet = new Set();
+    kwDisplayData.forEach(d => d.data.forEach(t => weekSet.add(t.period)));
+    displayPeriods = [...weekSet].sort();
+  }
+
+  // ── X축 라벨 생성 ──
+  const labels = _buildDailyLabels(displayPeriods, isWeekly);
+
+  // ── 각 키워드 데이터를 displayPeriods 기준으로 정렬/맞춤 ──
+  // period가 없는 날짜는 null로 채움 (Chart.js spanGaps 활용)
+  const periodIndex = {};
+  displayPeriods.forEach((p, i) => { periodIndex[p] = i; });
+
+  const datasets = kwDisplayData.map(d => {
+    const arr = new Array(displayPeriods.length).fill(null);
+    (isWeekly ? d.data : d.data).forEach(t => {
+      const idx = periodIndex[t.period];
+      if (idx !== undefined) {
+        arr[idx] = isVolume ? (t.volume ?? null) : (t.ratio ?? null);
+      }
     });
-
-    // 주간 집계: 일별 → 주차(Mon-Sun) 합산
-    if (isWeekly) {
-      filtered = aggregateWeekly(filtered);
-    }
-
     return {
-      keyword: d.keyword,
-      color: kwData.color || '#4F46E5',
-      data: filtered
+      label: d.keyword,
+      data: arr,
+      borderColor: d.color,
+      backgroundColor: d.color + '12',
+      borderWidth: isWeekly ? 2 : 1.5,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      pointBackgroundColor: d.color,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5,
+      fill: kwDisplayData.length === 1,
+      tension: isWeekly ? 0.4 : 0.25,
+      spanGaps: true  // null 구간을 선으로 이어줌
     };
-  }).filter(d => d.data.length > 0);
+  });
 
-  if (!filteredResults.length) {
+  // 데이터가 아예 없는 키워드 제거
+  const validDatasets = datasets.filter(ds => ds.data.some(v => v != null && v > 0));
+  if (!validDatasets.length) {
     canvas.style.display = 'none';
     if (emptyEl) emptyEl.style.display = 'flex';
     return;
@@ -2722,37 +2762,19 @@ function renderDailyTrendChart(dailyResults, period) {
   canvas.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
 
-  // X축 라벨 (년도 변경 시점에 년도 표시)
-  const allPeriods = filteredResults[0].data.map(t => t.period);
-  const labels = _buildDailyLabels(allPeriods, isWeekly);
-
-  const datasets = filteredResults.map(d => ({
-    label: d.keyword,
-    data: isVolume ? d.data.map(t => t.volume) : d.data.map(t => t.ratio),
-    borderColor: d.color,
-    backgroundColor: d.color + '12',
-    borderWidth: isWeekly ? 2 : 1.5,
-    pointRadius: 0,
-    pointHoverRadius: 5,
-    pointBackgroundColor: d.color,
-    pointBorderColor: '#fff', pointBorderWidth: 1.5,
-    fill: filteredResults.length === 1,
-    tension: isWeekly ? 0.4 : 0.25
-  }));
-
-  const allVals = datasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v) && v > 0);
+  const allVals = validDatasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v) && v > 0);
   const maxVal  = allVals.length ? Math.max(...allVals) : (isVolume ? 1000 : 100);
   const yMax    = isVolume
     ? Math.ceil(maxVal * 1.25 / 100) * 100 || 100
     : Math.min(100, Math.ceil(maxVal * 1.25 / 10) * 10 || 100);
 
   // X축 틱 밀도
-  const totalPts = filteredResults[0].data.length;
+  const totalPts = displayPeriods.length;
   const tickStep = _calcTickStep(totalPts);
 
   dailyChartInstance = new Chart(canvas, {
     type: 'line',
-    data: { labels, datasets },
+    data: { labels, datasets: validDatasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
@@ -2766,7 +2788,7 @@ function renderDailyTrendChart(dailyResults, period) {
           callbacks: {
             title: (items) => {
               const idx = items[0].dataIndex;
-              return filteredResults[0].data[idx]?.period || items[0].label;
+              return displayPeriods[idx] || items[0].label;
             },
             label: (ctx) => {
               const v = ctx.parsed.y;
@@ -2802,15 +2824,17 @@ function renderDailyTrendChart(dailyResults, period) {
     }
   });
 
-  // 범례
+  // 범례 (데이터가 있는 키워드만)
   const legendEl = document.getElementById('dailyTrendLegend');
   if (legendEl) {
-    legendEl.innerHTML = filteredResults.map(d => `
-      <div class="trend-legend-item">
-        <div class="trend-legend-line" style="background:${d.color}"></div>
-        <span>${d.keyword}</span>
-      </div>
-    `).join('');
+    legendEl.innerHTML = kwDisplayData
+      .filter(d => d.data.some(t => (isVolume ? t.volume : t.ratio) > 0))
+      .map(d => `
+        <div class="trend-legend-item">
+          <div class="trend-legend-line" style="background:${d.color}"></div>
+          <span>${d.keyword}</span>
+        </div>
+      `).join('');
   }
 }
 
@@ -2947,7 +2971,7 @@ function resetCustomRange() {
   showToast('기간 직접 지정이 초기화되었습니다.', 'success');
 }
 
-// 커스텀 날짜 범위로 일간 차트 렌더 (기존 renderDailyTrendChart 변형)
+// 커스텀 날짜 범위로 일간 차트 렌더 (renderDailyTrendChart와 동일한 union X축 방식)
 function renderDailyTrendChartCustom(dailyResults, startDate, endDate) {
   const canvas  = document.getElementById('dailyTrendChart');
   const emptyEl = document.getElementById('dailyEmpty');
@@ -2962,45 +2986,74 @@ function renderDailyTrendChartCustom(dailyResults, startDate, endDate) {
   const isWeekly = (dailyUnitMode === 'weekly');
   if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
 
-  const filteredResults = dailyResults.map(d => {
+  // 키워드별 volume 계산 후 날짜 범위 필터
+  const kwWithVolume = dailyResults.map(d => {
     const kwData = analysisData.find(
       a => (a.keyword || '').toLowerCase().trim() === (d.keyword || '').toLowerCase().trim()
     ) || {};
     const withVolume = calcDailyVolumes(d.data || [], kwData);
-    let filtered = withVolume.filter(t => {
+    const filtered = withVolume.filter(t => {
       if (!t.period || t.period.length < 10) return false;
       const dt = new Date(t.period);
       return dt >= cutoffStart && dt <= cutoffEnd;
     });
-    if (isWeekly) filtered = aggregateWeekly(filtered);
     return { keyword: d.keyword, color: kwData.color || '#4F46E5', data: filtered };
-  }).filter(d => d.data.length > 0);
+  });
 
-  if (!filteredResults.length) {
+  // 모든 키워드 period union으로 X축 구성
+  const allPeriodsSet = new Set();
+  kwWithVolume.forEach(d => d.data.forEach(t => allPeriodsSet.add(t.period)));
+  let displayPeriods = [...allPeriodsSet].sort();
+  let kwDisplayData  = kwWithVolume;
+
+  if (isWeekly) {
+    kwDisplayData = kwWithVolume.map(d => ({ ...d, data: aggregateWeekly(d.data) }));
+    const weekSet = new Set();
+    kwDisplayData.forEach(d => d.data.forEach(t => weekSet.add(t.period)));
+    displayPeriods = [...weekSet].sort();
+  }
+
+  if (!displayPeriods.length) {
     canvas.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'flex'; return;
   }
   canvas.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
 
-  const labels = _buildDailyLabels(filteredResults[0].data.map(t => t.period), isWeekly);
-  const datasets = filteredResults.map(d => ({
-    label: d.keyword,
-    data: isVolume ? d.data.map(t => t.volume) : d.data.map(t => t.ratio),
-    borderColor: d.color, backgroundColor: d.color + '12',
-    borderWidth: isWeekly ? 2 : 1.5, pointRadius: 0, pointHoverRadius: 5,
-    pointBackgroundColor: d.color, pointBorderColor: '#fff', pointBorderWidth: 1.5,
-    fill: filteredResults.length === 1, tension: isWeekly ? 0.4 : 0.25
-  }));
-  const allVals = datasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v) && v > 0);
+  const labels = _buildDailyLabels(displayPeriods, isWeekly);
+  const periodIndex = {};
+  displayPeriods.forEach((p, i) => { periodIndex[p] = i; });
+
+  const datasets = kwDisplayData.map(d => {
+    const arr = new Array(displayPeriods.length).fill(null);
+    d.data.forEach(t => {
+      const idx = periodIndex[t.period];
+      if (idx !== undefined) arr[idx] = isVolume ? (t.volume ?? null) : (t.ratio ?? null);
+    });
+    return {
+      label: d.keyword,
+      data: arr,
+      borderColor: d.color, backgroundColor: d.color + '12',
+      borderWidth: isWeekly ? 2 : 1.5, pointRadius: 0, pointHoverRadius: 5,
+      pointBackgroundColor: d.color, pointBorderColor: '#fff', pointBorderWidth: 1.5,
+      fill: kwDisplayData.length === 1, tension: isWeekly ? 0.4 : 0.25,
+      spanGaps: true
+    };
+  });
+  const validDatasets = datasets.filter(ds => ds.data.some(v => v != null && v > 0));
+  if (!validDatasets.length) {
+    canvas.style.display = 'none'; if (emptyEl) emptyEl.style.display = 'flex'; return;
+  }
+
+  const allVals = validDatasets.flatMap(ds => ds.data).filter(v => v != null && !isNaN(v) && v > 0);
   const maxVal  = allVals.length ? Math.max(...allVals) : (isVolume ? 1000 : 100);
   const yMax    = isVolume
     ? Math.ceil(maxVal * 1.25 / 100) * 100 || 100
     : Math.min(100, Math.ceil(maxVal * 1.25 / 10) * 10 || 100);
-  const totalPts = filteredResults[0].data.length;
+  const totalPts = displayPeriods.length;
   const tickStep = _calcTickStep(totalPts);
 
   dailyChartInstance = new Chart(canvas, {
-    type: 'line', data: { labels, datasets },
+    type: 'line', data: { labels, datasets: validDatasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
@@ -3012,7 +3065,7 @@ function renderDailyTrendChartCustom(dailyResults, startDate, endDate) {
           bodyFont:  { ...BASE_FONT, size: 11 },
           padding: 8, cornerRadius: 8,
           callbacks: {
-            title: (items) => filteredResults[0].data[items[0].dataIndex]?.period || items[0].label,
+            title: (items) => displayPeriods[items[0].dataIndex] || items[0].label,
             label: (ctx) => {
               const v = ctx.parsed.y;
               const suffix = isWeekly ? ' (주간 합계)' : '';
@@ -3039,13 +3092,15 @@ function renderDailyTrendChartCustom(dailyResults, startDate, endDate) {
       }
     }
   });
-  const legendEl = document.getElementById('dailyTrendLegend');
-  if (legendEl) {
-    legendEl.innerHTML = filteredResults.map(d => `
-      <div class="trend-legend-item">
-        <div class="trend-legend-line" style="background:${d.color}"></div>
-        <span>${d.keyword}</span>
-      </div>`).join('');
+  const legendEl2 = document.getElementById('dailyTrendLegend');
+  if (legendEl2) {
+    legendEl2.innerHTML = kwDisplayData
+      .filter(d => d.data.some(t => (isVolume ? t.volume : t.ratio) > 0))
+      .map(d => `
+        <div class="trend-legend-item">
+          <div class="trend-legend-line" style="background:${d.color}"></div>
+          <span>${d.keyword}</span>
+        </div>`).join('');
   }
 }
 
