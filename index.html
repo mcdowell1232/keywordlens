@@ -1884,9 +1884,31 @@ async function runRealAnalysis() {
     console.warn('[trend] 실패, 빈 트렌드로 진행:', e.message);
   }
 
+  // ── /demographic 호출: 성별/연령 데이터 별도 수집 ────────────────────────
+  // Worker /keyword 응답에 이미 maleRatio/femaleRatio/ageRatio 포함되지만
+  // 이전 검증된 방식(별도 /demographic 호출)을 병렬로 추가해 이중 보장
+  updateLoadingStatus('성별/연령 분석 중...');
+  let demoResults = {};
+  try {
+    demoResults = await ApiClient.fetchDemographicData(keywords, trendPeriod);
+  } catch(e) {
+    console.warn('[demo] /demographic 실패, kwResults 내 성비 사용:', e.message);
+    // kwResults 안의 성비/연령 데이터(Worker /keyword에서 반환)를 demoResults로 변환
+    demoResults = {};
+    (kwResults || []).forEach(kw => {
+      if (kw.keyword && kw.maleRatio != null) {
+        demoResults[kw.keyword] = {
+          maleRatio:   kw.maleRatio,
+          femaleRatio: kw.femaleRatio,
+          ageRatio:    kw.ageRatio,
+        };
+      }
+    });
+  }
+
   // ── 결과 병합 ──────────────────────────────────────────────────────────────
   updateLoadingStatus('결과 처리 중...');
-  analysisData = mergeApiResults(kwResults, trendResults, {}, keywords);
+  analysisData = mergeApiResults(kwResults, trendResults, demoResults, keywords);
   rawTrendData = trendResults;
 
   // trendPeriod < 12 이면 fullYearTrend 로 trendData.all 보완
@@ -1947,16 +1969,22 @@ function mergeApiResults(kwResults, trendResults, demoResults, requestedKeywords
     }
     const trendByDevice = { all: trendArr, pc: trendArr, mo: trendArr };
 
-    // ── 성별/연령: /keyword 응답에 포함된 값 우선, 없으면 기본값 ──
-    // Worker가 hasDemoData 플래그를 직접 내려줌:
-    //   true  = DataLab에서 실제 데이터 수집 성공
-    //   false = 영문/혼합 키워드 등 DataLab 데이터 없어 인덱스 기본값 사용
-    const maleRatio   = (kwData.maleRatio   !== undefined && kwData.maleRatio   !== null) ? kwData.maleRatio   : 50;
-    const femaleRatio = (kwData.femaleRatio !== undefined && kwData.femaleRatio !== null) ? kwData.femaleRatio : 50;
-    const ageRatio    = normalizeAgeRatio((kwData.ageRatio && kwData.ageRatio.length) ? kwData.ageRatio : getDefaultAgeRatio());
-    // Worker가 내린 hasDemoData 사용 (없으면 maleRatio 존재 여부로 판단)
-    const hasDemoData = (kwData.hasDemoData !== undefined) ? kwData.hasDemoData
-      : (kwData.maleRatio !== undefined && kwData.maleRatio !== null);
+    // ── 성별/연령: 우선순위 ──────────────────────────────────────────────────
+    // 1순위: /demographic 별도 호출 결과 (demoResults) — 이전 검증된 방식
+    // 2순위: /keyword 통합 응답 kwData 내 maleRatio/ageRatio — Worker 통합 방식
+    // 3순위: 기본값 50/50
+    const demoSrc = demo && (demo.maleRatio != null) ? demo
+                  : (kwData.maleRatio != null)       ? kwData
+                  : null;
+    const maleRatio   = demoSrc ? demoSrc.maleRatio   : 50;
+    const femaleRatio = demoSrc ? demoSrc.femaleRatio  : 50;
+    const ageRatio    = normalizeAgeRatio(
+      (demoSrc && demoSrc.ageRatio && demoSrc.ageRatio.length) ? demoSrc.ageRatio : getDefaultAgeRatio()
+    );
+    // hasDemoData: 실제 DataLab 데이터가 있는지 여부
+    const hasDemoData = demoSrc
+      ? (demoSrc.hasDemoData !== undefined ? demoSrc.hasDemoData : true)
+      : false;
 
     return {
       keyword: kw, color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length], index: idx,
