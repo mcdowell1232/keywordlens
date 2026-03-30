@@ -2488,23 +2488,36 @@ async function loadDailyTrendBackground() {
 //   (키워드ratio / 로보락ratio) × 로보락실제검색량 으로 환산된 값
 //   → 이전처럼 baseSearch로 역산할 필요 없이 ratio 자체를 검색량으로 사용
 //
-// 처리 흐름:
-//   STEP 1. 월간 트렌드(_full12 또는 trendData.all) ratio = 달별 절대 추정 검색량
-//           → monthSearchMap[ym] = ratio 직접 사용
-//   STEP 2. 일간 트렌드 ratio = 일별 절대 추정 검색량
-//           → 단, 일간 비율이 월간 값과 스케일이 다를 수 있으므로
-//             "해당 달의 일간 ratio 합 vs 월간 ratio"로 보정
-//   STEP 3. volume = (일간ratio / 해당달 일간ratio합) × 월간검색량
+// ★★★ v20260402 신규 설계 ★★★
 //
-// ★ Fallback: ratio가 0~100 범위(구버전 Worker or 로보락 자신)인 경우
-//   → baseSearch 기반 역산으로 자동 폴백
+// Worker(v20260402)는 이미 절대 추정 검색량을 ratio에 담아 반환합니다.
+//   scale = idxTotal(로보락 2월 실제 검색량) / (로보락 2월 일별ratio 합계)
+//   ratio = 원본ratio × scale  → 직접 volume으로 사용 가능
+//
+// 처리 흐름:
+//   일간 ratio > 100  → Worker 절대값 → volume = ratio 직접 사용
+//   일간 ratio 0~100  → 구버전 Worker 또는 예외 → baseSearch 기반 폴백
 //
 function calcDailyVolumes(dailyData, kwAnalysis) {
   if (!dailyData || !dailyData.length) return [];
 
   const baseSearch = kwAnalysis.totalSearch || 0;
 
-  // ── STEP 1: 월별 일간 ratio 합계 + 일수 카운트 (일간 분배용) ──
+  // ── 일간 ratio가 절대값인지 판별 ─────────────────────────────
+  // Worker v20260402+: ratio = 원본ratio × scale (수백~수만 단위)
+  // 구버전 Worker: ratio = 0~100 상대지수
+  const maxDailyRatio = dailyData.reduce((mx, t) => Math.max(mx, t.ratio || 0), 0);
+  const isDailyAbsolute = maxDailyRatio > 100;
+
+  if (isDailyAbsolute) {
+    // ── ★ 신버전: ratio = 절대 추정 검색량, 직접 volume으로 사용 ──
+    return dailyData.map(t => ({
+      ...t,
+      volume: Math.round(t.ratio || 0)
+    }));
+  }
+
+  // ── 구버전 폴백: ratio 0~100 → baseSearch 기반 역산 ──────────
   const monthRatioSum  = {};
   const monthDayCount  = {};
   dailyData.forEach(t => {
@@ -2517,7 +2530,6 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
     const [y, m] = ymStr.split('-').map(Number);
     return new Date(y, m, 0).getDate();
   }
-  // 부분 달(첫달/마지막달) 보정: 일평균으로 전체 달 환산
   const monthRatioSumAdj = {};
   Object.keys(monthRatioSum).forEach(ym => {
     const actual   = monthDayCount[ym];
@@ -2529,7 +2541,6 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
     }
   });
 
-  // ── STEP 2: 달별 검색량 맵 구성 ──────────────────────────────
   const td = kwAnalysis.trendData || {};
   const monthlyArr = (td._full12 && td._full12.length) ? td._full12 : (td.all || []);
   const allDailyMonthsSorted = [...new Set(dailyData.map(t => t.period.substring(0, 7)))].sort();
@@ -2541,22 +2552,15 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
     monthlyArr.forEach(m => { monthRatioMap[m.period] = m.ratio || 0; });
     const sortedMonths = Object.keys(monthRatioMap).sort();
 
-    // ★ ratio가 절대 추정 검색량인지 판별
-    // 절대값: 100 초과하는 ratio 존재 (로보락 검색량 수만 단위)
-    // 상대값: 모두 0~100 범위 (구버전 Worker)
     const maxMonthlyRatio = sortedMonths.reduce((mx, m) => Math.max(mx, monthRatioMap[m] || 0), 0);
     const isAbsolute = maxMonthlyRatio > 100;
 
     if (isAbsolute) {
-      // ── 신버전 Worker: ratio = 달별 절대 추정 검색량 ──────────────
       sortedMonths.forEach(ym => {
         monthSearchMap[ym] = Math.round(monthRatioMap[ym]);
       });
     } else {
-      // ── 구버전 Worker / 로보락 자신: ratio = 0~100 상대지수 ────────
-      // baseSearch(최근달 검색량)를 앵커로 전체 역산
       const totalMonthlyRatio = sortedMonths.reduce((s, m) => s + (monthRatioMap[m] || 0), 0);
-      // anchorMonth = 일간 데이터 최신달 또는 월간 배열 마지막달
       const latestDailyMonth = allDailyMonthsSorted[allDailyMonthsSorted.length - 1];
       let anchorMonth = sortedMonths[sortedMonths.length - 1];
       if (latestDailyMonth && monthRatioMap[latestDailyMonth] !== undefined) {
@@ -2572,7 +2576,6 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
       });
     }
 
-    // 월간에 없는 달(일간에만 있는 달) → 인접 달 선형 보간
     allDailyMonthsSorted.forEach(ym => {
       if (monthSearchMap[ym] !== undefined) return;
       const before = sortedMonths.filter(m => m <= ym).pop();
@@ -2595,10 +2598,8 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
     allDailyMonthsSorted.forEach(ym => { monthSearchMap[ym] = baseSearch; });
   }
 
-  // ── STEP 3: 일간 추정 검색량 계산 ───────────────────────────
-  // ★ 일간 ratio도 절대값인 경우 직접 volume으로 사용
-  // 하지만 일간 ratio와 월간 ratio의 스케일이 같다는 보장이 없으므로
-  // "해당 달의 일간 ratio 합 대비 비율" × 월간 검색량으로 보정
+  // ── 구버전 폴백 STEP 3: 일간 추정 검색량 계산 ──────────────
+  // ratio 0~100 → monthSearchMap 기반으로 환산
   return dailyData.map(t => {
     const ym          = t.period.substring(0, 7);
     const ratioSum    = monthRatioSumAdj[ym] || monthRatioSum[ym] || 1;
