@@ -1273,15 +1273,21 @@ const ApiClient = (() => {
   }
   function parseTrendResponse(raw, requestedKeywords, isDaily = false) {
     const results = raw.results || [];
+    // 대소문자·공백 무시 정규화 헬퍼
+    const _norm = s => (s || '').toLowerCase().replace(/\s+/g, '');
+    // title → 정규화된 키로 맵 구성
     const trendMap = {};
     results.forEach(group => {
-      trendMap[group.title] = group.data.map(d => ({
+      const key = _norm(group.title);
+      trendMap[key] = group.data.map(d => ({
         // 월간: 'YYYY-MM-DD' → 'YYYY-MM' / 일간: 'YYYY-MM-DD' 그대로 보존
         period: isDaily ? d.period.substring(0, 10) : d.period.substring(0, 7),
-        ratio: Math.round(d.ratio * 10) / 10, // 일간은 소수점 1자리 유지
+        // ★ Worker v20260330부터 ratio = 절대 추정 검색량 (이전: 0~100 상대지수)
+        //    소수점 처리만 유지 (값 자체는 변경 없음)
+        ratio: Math.round(d.ratio * 10) / 10,
       }));
     });
-    return requestedKeywords.map(kw => ({ keyword: kw, data: trendMap[kw] || [] }));
+    return requestedKeywords.map(kw => ({ keyword: kw, data: trendMap[_norm(kw)] || [] }));
   }
   async function fetchDemographicData(keywords, period = 3) {
     const { startDate, endDate } = getPeriodDates(period);
@@ -1506,12 +1512,21 @@ function formatVolumeShort(v) {
   return String(Math.round(v));
 }
 
-// 트렌드 비율 → 실제 검색량 역산
-// baseSearch: 해당 키워드의 월간 총 검색량(최근 1개월 기준, SearchAd API 값)
-// 역산 공식: 가장 최근 달 트렌드 비율 = baseSearch 기준점
-// 이전 달 추정 = baseSearch × (해당달 ratio / 최근달 ratio)
+// 트렌드 ratio → 실제 검색량 역산 (월간 차트 막대그래프용)
+//
+// ★ Worker v20260330부터 ratio = 로보락 인덱스 기준 절대 추정 검색량
+//   → ratio > 100이면 절대값으로 직접 사용
+//   → ratio ≤ 100이면 구버전(상대지수): baseSearch 기준으로 역산
+//
 function estimateVolumeFromTrend(ratioArr, baseSearch) {
   if (!ratioArr || !ratioArr.length) return [];
+  // 절대값 판별: 배열 내 최대 ratio > 100이면 신버전(절대 추정 검색량)
+  const maxRatio = ratioArr.reduce((mx, t) => Math.max(mx, t.ratio || 0), 0);
+  if (maxRatio > 100) {
+    // ★ 신버전: ratio 자체가 절대 추정 검색량
+    return ratioArr.map(t => ({ ...t, volume: Math.round(t.ratio) }));
+  }
+  // 구버전 / 로보락 자신: baseSearch 기준 역산
   if (!baseSearch) return ratioArr.map(t => ({ ...t, volume: 0 }));
   const lastRatio = ratioArr[ratioArr.length - 1].ratio || 1;
   return ratioArr.map(t => ({
@@ -2468,24 +2483,20 @@ async function loadDailyTrendBackground() {
 
 // ── 일간 역산 핵심 함수 ─────────────────────────────────
 //
-// 네이버 DataLab ratio 특성:
-//   - 월간 ratio: 요청 기간(N달) 내 최고달 = 100 으로 정규화
-//   - 일간 ratio: 요청 기간(365일) 내 최고일 = 100 으로 정규화
-//   → 두 ratio의 스케일이 서로 다름. 직접 곱하면 안 됨.
+// ★ Worker v20260330부터 ratio = 로보락 인덱스 기준 절대 추정 검색량
+//   (키워드ratio / 로보락ratio) × 로보락실제검색량 으로 환산된 값
+//   → 이전처럼 baseSearch로 역산할 필요 없이 ratio 자체를 검색량으로 사용
 //
-// 올바른 공식:
-//   1. 월간 트렌드로 달별 상대 비중 계산 (월간 ratio / 기간 내 합계)
-//   2. 앵커달(anchorMonth) = 일간 데이터에서 가장 최신 달
-//      → SearchAd의 baseSearch(현재달 검색량)와 매핑되는 달
-//      → 앵커달의 월간 ratio를 기준으로 전체 기간 총 검색량 역산
-//   3. 달별 검색량 = (달별 ratio / 전체 ratio 합) × 전체 총량
-//   4. 일간 검색량 = (일간 ratio / 해당달 일간 ratio 합보정) × 달별 검색량
+// 처리 흐름:
+//   STEP 1. 월간 트렌드(_full12 또는 trendData.all) ratio = 달별 절대 추정 검색량
+//           → monthSearchMap[ym] = ratio 직접 사용
+//   STEP 2. 일간 트렌드 ratio = 일별 절대 추정 검색량
+//           → 단, 일간 비율이 월간 값과 스케일이 다를 수 있으므로
+//             "해당 달의 일간 ratio 합 vs 월간 ratio"로 보정
+//   STEP 3. volume = (일간ratio / 해당달 일간ratio합) × 월간검색량
 //
-// ★ 핵심 수정 (v20260330):
-//   - anchorMonth를 월간 배열의 마지막달이 아닌,
-//     일간 데이터에 실제 포함된 가장 최신달로 설정
-//   - 이렇게 해야 baseSearch(SearchAd 현재달 검색량)와 정확히 매핑됨
-//   - 드리미x60 같은 신제품: 과거에는 검색량 거의 없고 최근에 피크 → 올바르게 역산
+// ★ Fallback: ratio가 0~100 범위(구버전 Worker or 로보락 자신)인 경우
+//   → baseSearch 기반 역산으로 자동 폴백
 //
 function calcDailyVolumes(dailyData, kwAnalysis) {
   if (!dailyData || !dailyData.length) return [];
@@ -2494,81 +2505,73 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
 
   // ── STEP 1: 월별 일간 ratio 합계 + 일수 카운트 (일간 분배용) ──
   const monthRatioSum  = {};
-  const monthDayCount  = {}; // 실제 데이터가 있는 일수
+  const monthDayCount  = {};
   dailyData.forEach(t => {
     const ym = t.period.substring(0, 7);
     monthRatioSum[ym]  = (monthRatioSum[ym]  || 0) + t.ratio;
     monthDayCount[ym]  = (monthDayCount[ym]  || 0) + 1;
   });
 
-  // 각 달의 실제 일수 (데이터 완전성 체크용)
   function daysInMonth(ymStr) {
     const [y, m] = ymStr.split('-').map(Number);
     return new Date(y, m, 0).getDate();
   }
-  // 데이터가 절반 이하인 달(첫달/마지막달 등 부분 데이터)은
-  // 일간 ratio 합을 실제 일수 기준으로 보정
-  // → 부분 달의 ratioSum이 작아서 volume 과대추정되는 것 방지
+  // 부분 달(첫달/마지막달) 보정: 일평균으로 전체 달 환산
   const monthRatioSumAdj = {};
   Object.keys(monthRatioSum).forEach(ym => {
     const actual   = monthDayCount[ym];
     const expected = daysInMonth(ym);
     if (actual < expected * 0.8) {
-      // 부분 달: 일평균으로 보정해서 전체 달 기준으로 환산
       monthRatioSumAdj[ym] = Math.round((monthRatioSum[ym] / actual) * expected);
     } else {
       monthRatioSumAdj[ym] = monthRatioSum[ym];
     }
   });
 
-  // ── STEP 2: 월간 트렌드로 달별 검색량 맵 구성 ────────────────
+  // ── STEP 2: 달별 검색량 맵 구성 ──────────────────────────────
   const td = kwAnalysis.trendData || {};
-  // _full12(커스텀 전체 기간 / 12개월치) 우선, 없으면 trendData.all
-  const monthlyArr = (td._full12 && td._full12.length)
-    ? td._full12
-    : (td.all || []);
+  const monthlyArr = (td._full12 && td._full12.length) ? td._full12 : (td.all || []);
+  const allDailyMonthsSorted = [...new Set(dailyData.map(t => t.period.substring(0, 7)))].sort();
 
   const monthSearchMap = {};
 
   if (monthlyArr.length > 0) {
-    // 월간 ratio 배열 → { 'YYYY-MM': ratio } 맵
     const monthRatioMap = {};
     monthlyArr.forEach(m => { monthRatioMap[m.period] = m.ratio || 0; });
     const sortedMonths = Object.keys(monthRatioMap).sort();
 
-    const totalMonthlyRatio = sortedMonths.reduce((s, m) => s + (monthRatioMap[m] || 0), 0);
+    // ★ ratio가 절대 추정 검색량인지 판별
+    // 절대값: 100 초과하는 ratio 존재 (로보락 검색량 수만 단위)
+    // 상대값: 모두 0~100 범위 (구버전 Worker)
+    const maxMonthlyRatio = sortedMonths.reduce((mx, m) => Math.max(mx, monthRatioMap[m] || 0), 0);
+    const isAbsolute = maxMonthlyRatio > 100;
 
-    // ★ 핵심: anchorMonth = 일간 데이터에서 가장 최신 달
-    //   (SearchAd의 baseSearch는 API 호출 시점의 최근 1개월 검색량이므로
-    //    일간 트렌드의 최신달과 맞춰야 정확한 역산이 가능)
-    const allDailyMonthsSorted = [...new Set(dailyData.map(t => t.period.substring(0, 7)))].sort();
-    const latestDailyMonth = allDailyMonthsSorted[allDailyMonthsSorted.length - 1]; // 일간 데이터 최신달
-
-    // 월간 배열에서 앵커달 찾기: 일간 최신달과 가장 가까운 달 사용
-    // (일간 최신달이 월간 배열에 없으면 월간 배열의 가장 마지막 달 사용)
-    let anchorMonth = sortedMonths[sortedMonths.length - 1]; // 기본값: 월간 배열 마지막달
-    if (latestDailyMonth && monthRatioMap[latestDailyMonth] !== undefined) {
-      anchorMonth = latestDailyMonth; // 일간 최신달이 월간 배열에 있으면 우선 사용
-    } else if (latestDailyMonth) {
-      // 일간 최신달 이전의 가장 가까운 월간 달 찾기
-      const candidateBefore = sortedMonths.filter(m => m <= latestDailyMonth).pop();
-      if (candidateBefore) anchorMonth = candidateBefore;
+    if (isAbsolute) {
+      // ── 신버전 Worker: ratio = 달별 절대 추정 검색량 ──────────────
+      sortedMonths.forEach(ym => {
+        monthSearchMap[ym] = Math.round(monthRatioMap[ym]);
+      });
+    } else {
+      // ── 구버전 Worker / 로보락 자신: ratio = 0~100 상대지수 ────────
+      // baseSearch(최근달 검색량)를 앵커로 전체 역산
+      const totalMonthlyRatio = sortedMonths.reduce((s, m) => s + (monthRatioMap[m] || 0), 0);
+      // anchorMonth = 일간 데이터 최신달 또는 월간 배열 마지막달
+      const latestDailyMonth = allDailyMonthsSorted[allDailyMonthsSorted.length - 1];
+      let anchorMonth = sortedMonths[sortedMonths.length - 1];
+      if (latestDailyMonth && monthRatioMap[latestDailyMonth] !== undefined) {
+        anchorMonth = latestDailyMonth;
+      } else if (latestDailyMonth) {
+        const cb = sortedMonths.filter(m => m <= latestDailyMonth).pop();
+        if (cb) anchorMonth = cb;
+      }
+      const anchorRatio    = monthRatioMap[anchorMonth] || 1;
+      const totalEstimated = baseSearch > 0 ? Math.round(baseSearch * totalMonthlyRatio / anchorRatio) : 0;
+      sortedMonths.forEach(ym => {
+        monthSearchMap[ym] = Math.round((monthRatioMap[ym] / totalMonthlyRatio) * totalEstimated);
+      });
     }
 
-    const anchorRatio = monthRatioMap[anchorMonth] || 1;
-
-    // 앵커달 비중 = anchorRatio / totalMonthlyRatio
-    // 전체 기간 총 검색량 = baseSearch / (anchorRatio / totalMonthlyRatio)
-    const totalEstimated = baseSearch > 0
-      ? Math.round(baseSearch * totalMonthlyRatio / anchorRatio)
-      : 0;
-
-    // 달별 검색량 = (해당달 ratio / 전체 ratio 합) × 전체 총량
-    sortedMonths.forEach(ym => {
-      monthSearchMap[ym] = Math.round((monthRatioMap[ym] / totalMonthlyRatio) * totalEstimated);
-    });
-
-    // 월간 트렌드에 없는 달(일간 데이터에는 있는 달) → 인접 달 선형 보간
+    // 월간에 없는 달(일간에만 있는 달) → 인접 달 선형 보간
     allDailyMonthsSorted.forEach(ym => {
       if (monthSearchMap[ym] !== undefined) return;
       const before = sortedMonths.filter(m => m <= ym).pop();
@@ -2585,15 +2588,16 @@ function calcDailyVolumes(dailyData, kwAnalysis) {
         monthSearchMap[ym] = baseSearch;
       }
     });
+
   } else {
-    // 월간 트렌드 없음 → 모든 달에 baseSearch fallback
-    [...new Set(dailyData.map(t => t.period.substring(0, 7)))].forEach(ym => {
-      monthSearchMap[ym] = baseSearch;
-    });
+    // 월간 트렌드 없음 → baseSearch fallback
+    allDailyMonthsSorted.forEach(ym => { monthSearchMap[ym] = baseSearch; });
   }
 
   // ── STEP 3: 일간 추정 검색량 계산 ───────────────────────────
-  // 공식: (일간 ratio / 해당달 일간 ratio 합보정) × 해당달 월간 검색량
+  // ★ 일간 ratio도 절대값인 경우 직접 volume으로 사용
+  // 하지만 일간 ratio와 월간 ratio의 스케일이 같다는 보장이 없으므로
+  // "해당 달의 일간 ratio 합 대비 비율" × 월간 검색량으로 보정
   return dailyData.map(t => {
     const ym          = t.period.substring(0, 7);
     const ratioSum    = monthRatioSumAdj[ym] || monthRatioSum[ym] || 1;
