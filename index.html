@@ -2136,14 +2136,15 @@ async function refreshTrendData() {
       ApiClient.fetchTrendData(keywords, trendPeriod, trendDevice),
       trendPeriod < 12 ? ApiClient.fetchTrendData(keywords, 12, 'all') : Promise.resolve([]),
     ]);
+    const _nk = s => (s||'').toLowerCase().replace(/\s+/g,'');
     rawTrendData = trendResults;
     trendResults.forEach(r => {
-      const d = analysisData.find(a => a.keyword === r.keyword);
+      const d = analysisData.find(a => _nk(a.keyword) === _nk(r.keyword));
       if (d) d.trendData.all = r.data;
     });
     if (fullYr.length > 0) {
       fullYr.forEach(r => {
-        const d = analysisData.find(a => a.keyword === r.keyword);
+        const d = analysisData.find(a => _nk(a.keyword) === _nk(r.keyword));
         if (d) d.trendData._full12 = r.data;
       });
     } else {
