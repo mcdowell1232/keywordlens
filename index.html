@@ -2681,13 +2681,23 @@ function renderDailyTrendChart(dailyResults, period) {
 
   if (dailyChartInstance) { dailyChartInstance.destroy(); dailyChartInstance = null; }
 
-  // ── 키워드별 volume 계산 (기간 필터 없이 전체 1년) ──
+  // ── 기간 버튼(period)에 따른 cutoff 계산 ──────────────────────────────────
+  // period=1 → 최근 1개월, period=3 → 최근 3개월, period=6 → 6개월, period=12 → 1년 전체
+  const effectivePeriod = period || trendPeriod || 12;
+  const now    = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - effectivePeriod + 1, 1);
+  const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
+
+  // ── 키워드별 volume 계산 후 기간 필터 적용 ──────────────────────────────
   const kwWithVolume = dailyResults.map(d => {
     const kwData = analysisData.find(
       a => (a.keyword || '').toLowerCase().trim() === (d.keyword || '').toLowerCase().trim()
     ) || {};
+    // calcDailyVolumes는 전체 1년치로 수행 (scale 계산 정확도 위해)
     const withVolume = calcDailyVolumes(d.data || [], kwData);
-    return { keyword: d.keyword, color: kwData.color || '#4F46E5', data: withVolume };
+    // 이후 기간 필터 적용 (슬라이싱만 — 추가 API 호출 없음)
+    const filtered = withVolume.filter(t => t.period >= cutoffStr);
+    return { keyword: d.keyword, color: kwData.color || '#4F46E5', data: filtered };
   });
 
   // ── 모든 키워드의 period를 합집합(union)으로 X축 구성 ──
@@ -3125,6 +3135,11 @@ function renderDowChart(dailyResults) {
 
   if (dowChartInstance) { dowChartInstance.destroy(); dowChartInstance = null; }
 
+  // 기간 필터 (trendPeriod 기준)
+  const _now2    = new Date();
+  const _cutoff2 = new Date(_now2.getFullYear(), _now2.getMonth() - (trendPeriod || 12) + 1, 1);
+  const _cutoffStr2 = `${_cutoff2.getFullYear()}-${String(_cutoff2.getMonth()+1).padStart(2,'0')}-${String(_cutoff2.getDate()).padStart(2,'0')}`;
+
   const DOW_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
   // 요일별 ratio 합산 + 카운트
   const kwResults = dailyResults.map(d => {
@@ -3133,7 +3148,7 @@ function renderDowChart(dailyResults) {
     ) || {};
     const sums   = [0, 0, 0, 0, 0, 0, 0];
     const counts = [0, 0, 0, 0, 0, 0, 0];
-    (d.data || []).forEach(t => {
+    (d.data || []).filter(t => t.period >= _cutoffStr2).forEach(t => {
       if (!t.period || t.period.length < 10) return;
       const [y, mo, dy] = t.period.split('-').map(Number);
       const dt  = new Date(y, mo - 1, dy);
