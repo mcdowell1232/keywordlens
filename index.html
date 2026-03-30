@@ -1746,8 +1746,11 @@ const modalCancel    = document.getElementById('modalCancel');
 const modalSave      = document.getElementById('modalSave');
 
 function normalizeKeyword(kw) {
-  // 띄어쓰기 제거 + 영문 소문자 변환 (네이버 API 기준)
-  return kw.trim().replace(/[,，]/g, '').replace(/\s+/g, '').toLowerCase();
+  // 네이버 키워드 정규화: 앞뒤 공백 + 내부 공백 + 쉼표 제거
+  // 네이버는 대소문자·공백을 모두 동일 키워드로 처리 → 공백만 제거하고 대소문자 원본 유지
+  // Worker에서 naverNorm(소문자+공백제거)으로 API 매칭을 처리하므로 클라이언트는 원본 대소문자 보존
+  // (예: 'LG 로봇청소기' → 'LG로봇청소기', 'lg 로 봇 청소기' → 'lg로봇청소기')
+  return kw.trim().replace(/[,，]/g, '').replace(/\s+/g, '');
 }
 
 function addKeyword(kw) {
@@ -2129,7 +2132,7 @@ function renderResults() {
   renderTrend();
   renderEfficiency();
   switchTab('overview');
-  // ★ 연관검색어 퀵조회: 첫 번째 키워드 기준으로 자동 조회 (활성화된 경우)
+  // ★ 연관검색어 퀵조회: 입력한 전체 키워드 기준으로 자동 조회 (활성화된 경우)
   if (keywords.length > 0) RelatedSearch.onAnalysisDone(keywords);
 }
 
